@@ -16,7 +16,7 @@
 
 \cvprfinalcopy % *** Uncomment this line for the final submission
 
-\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+\def\cvprPaperID{6969} % *** Enter the CVPR Paper ID here
 \def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
 
 % Pages are numbered in submission mode, and unnumbered in camera-ready
@@ -25,7 +25,8 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{\LaTeX\ Author Guidelines for CVPR Proceedings}
+% \title{Final Project Proposal - <Copy paste from Ravi>}
+\title{Final Project Proposal - Expanding Learning-Based Light Field View Synthesis}
 
 \author{Thomas Lauer\\
 UC San Diego\\
@@ -74,7 +75,7 @@ perspectives of a scene in one light field.
 % Insert summary of levoy 96 (this bit is related) (needs proper citation)
 Many geometric methods such as Levoy \etal~\cite{levoy1996light} require relatively high sample counts to ensure full
 coverage of the 4D lightfield, as the simple linear interpolation used by Levoy
-do not work if there are occluded regions or missing data.
+do not work well if there are heavily occluded regions or missing data.
 
 Kalantari summarizes several existing methods for interpolating lightfields and their drawbacks.
 Many rely on high quality input images and well defined orientations between views,
@@ -86,8 +87,8 @@ using traditional computer vision as a preprocessing step. However, because the 
 is independent from the loss function, it can't be optimized as part of the loss function. 
 
 Kalantari \etal~\cite{LearningViewSynthesis} propose a method to interpolate between 
-sparsely sampled sub-apertures. They use an $8 \times 8$ subset of the full $14 \times 14$ subaperture, since the
-edge pixels are often black. The four corner sub-aperture images are fed into a series of two 
+sparsely sampled sub-apertures views. They use an $8 \times 8$ subset of the full $14 \times 14$ subaperture, since the
+edge pixels are often black. The four corner sub-aperture views are fed into a series of two 
 networks, the first is used to predict disparity which is then used to warp the sample images to the final perspective.
 The second network then takes these warped images, along with some additional metadata, and blends them together
 to produce the final RGB image of the novel view. Keeping this process differentiable allows both CNNs to 
@@ -95,7 +96,8 @@ be trained at the same time, which lets the disparity estimator become tuned to 
 
 \section{Our Proposal}
 
-Our goal is to reimplement this paper and additionally try to apply this technique to non-Lytro camera
+Our goal is to reimplement the paper \textit{Learning-Based View Synthesis for Light Field Cameras} by 
+Kalantari \etal~\cite{LearningViewSynthesis} and additionally try to apply this technique to non-Lytro camera
 array captures. Further, we would like to investigate rendering novel views outside of the planar
 quadrilateral formed by the source images.
 
@@ -128,7 +130,6 @@ images at a set number of disparity levels. These are accumulated into a feature
 input to the disparity prediction network. More details can be found in section 3.1 of 
 Kalantari \etal~\cite{LearningViewSynthesis}.
 
-
 \subsection{Investigate Using Different Sampled Orientations}
 
 An additional approach we would like to consider to get more spread out of the Lytor capture data
@@ -146,9 +147,11 @@ a regular square and camera orientation varies.
 Finally, we would like to experiment with changing the virtual camera's depth, moving it gradually
 away from the capture plane. A further path to test is the ability of our approach to esimate novel
 views which are still on the same plane as our reference views, but outside the bounds of the
-quadrilateral which they form.
+quadrilateral which they form. We could also test different numbers of sample images, the original
+paper used four to cover the entire $8 \times 8$ grid, but we could investigate how more or fewer images
+influence the quality of the results. 
 
-We generally are classifying this milestone as ambition
+We generally are classifying this milestone as ambition.
 
 \section{Technology}
 
@@ -156,17 +159,32 @@ We intend to implement this using PyTorch, because it has high performance,
 automatically handles calculating derivatives, and we have previous experience with it.
 Additionally, we will likely be using OpenCV or something similar for feature extraction
 in the preprocessing stage.
+We are not expecting to get real time performance, the paper claims it took 12.3 seconds to synthesize
+a single image using a Matlab implementation. We will stitch the individual images into a video to
+help visualize the results.
 
 \section{Datasets}
 
 Our training datasets will be Lytro captures since it represents a standardized input format which is
-widely available, for example from Stanford at http://lightfields.stanford.edu/LF2016.html. We chose
-to use 
+widely available, for example from Stanford at http://lightfields.stanford.edu/LF2016.html.
+Because Lytro images are consistently formatted, we should be able to easily test our code with many different
+light fields. We also want to test this approach with a camera array, and we could easily adapt our preprocessing
+to accept the Stanford Multi-Camera Array. We won't be considering more free form light fields, such as those
+captured by handheld phone cameras, because of the added complexity of different camera orientations.
 
 \section{Questions to be Answered}
 
-How the disparity from the first CNN compares to disparity produced 
-by traditional computer vision methods, such as OpenCV.
+How does the disparity from the first CNN compare to disparity produced 
+by traditional computer vision methods, such as OpenCV?
+
+Will the approach outlined work when we select sampled images from different locations, instead 
+of the corners of the sub-aperture views? Further, is the CNN learning in this fixed grid transferrable
+to other grid layouts?
+
+Will this work if we try to reconstruct a novel view outside the bounds of the sampled sub-aperture views?
+
+If learning in non-transferrable across capture grid aspect ratios, is it possible to solve this with
+image stretching?
 
 {\small
 \bibliographystyle{ieee_fullname}
