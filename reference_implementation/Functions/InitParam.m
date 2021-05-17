@@ -25,8 +25,8 @@ inputView.Y = inputView.Y(:); inputView.X = inputView.X(:);
 
 %%% If you have compiled MatConvNet with GPU and CuDNN supports, then leave
 %%% these parameters as is. Otherwise change them appropriately.
-param.useGPU = true; 
-param.gpuMethod = 'Cudnn';%'NoCudnn';%
+param.useGPU = false; 
+param.gpuMethod = 'NoCudnn';%'Cudnn';%
 
 
 %%%%%%%%%%%%%%%%%% Training Parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
