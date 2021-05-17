@@ -84,7 +84,7 @@ captured by hand with cellphone cameras.
 
 Wanner \etal~\cite{Wanner} utilizes an optimization based approach, which calculates disparities
 using traditional computer vision as a preprocessing step. However, because the disparity estimation
-is independent from the loss function, it can't be optimized as part of the loss function. 
+is independent from the loss function, it can not be optimized as part of the loss function. 
 
 Kalantari \etal~\cite{LearningViewSynthesis} propose a method to interpolate between 
 sparsely sampled sub-apertures views. They use an $8 \times 8$ subset of the full $14 \times 14$ subaperture, since the
@@ -105,15 +105,15 @@ quadrilateral formed by the source images.
 
 Below are our milestones.
 
-\subsection{Load Lightfields Into CNN}
+\subsection{Set up original Matlab implementation (May 16th)}
 
-Our first goal will be to load datasets into PyTorch, and set up our preprocessing pipeline.
-This will involve creating dataloaders to convert the interlaced Lytro image into a stack of individual images,
-extract training batches, and set up our boilerplate training loop.
+Our first goal will be to set up the original paper's code and recreate their results. This will
+give us a baseline to compare our new implementation to as we move forward. We will also study
+their implementation to see how they compute the gradient of the bicubic interpolation.
 
-\subsection{Naive CNN Approach}
+\subsection{Naive CNN Approach (May 19th)}
 
-After initial preprocessing, we aim to implement a single layer CNN similar to the
+Our second goal will be to implement a single layer CNN similar to the
 Naive approach outlined in the paper. This is a single convolutional network which
 accepts the 4 sampled images along with their position information as input, and
 attempts to produce the novel view requested. As Kalantari \etal show, this should be able
@@ -122,7 +122,7 @@ progress check to ensure we can actually train the network correctly.
 
 We estimate that up to this point should take approximately a week.
 
-\subsection{Two-Part CNN With Disparity Estimation}
+\subsection{Two-Part CNN With Disparity Estimation (May 25th)}
 
 The next step will be implementing the two-stage CNN architecture outlined by Kalantari \etal.
 Instead of feeding the raw images from the sampled views, we apply a disparity warp to all the
@@ -130,19 +130,19 @@ images at a set number of disparity levels. These are accumulated into a feature
 input to the disparity prediction network. More details can be found in section 3.1 of 
 Kalantari \etal~\cite{LearningViewSynthesis}.
 
-\subsection{Investigate Using Different Sampled Orientations}
+\subsection{Investigate Using Different Sampled Orientations (May 29th)}
 
 An additional approach we would like to consider to get more spread out of the Lytor capture data
 is to choose our input images in a diamond pattern rather than the $8 \times 8$ grid from the original
 paper.
 
-\subsection{Investigate Using Camera Array Datasets}
+\subsection{Investigate Using Camera Array Datasets (May 29th)}
 
 As a followup, we intend to investigate how model trained in this manner is
 able to generalize to other camera array datasets, both where the views don't form
 a regular square and camera orientation varies.
 
-\subsection{Exploration of novel view outside capture bounds}
+\subsection{Exploration of novel view outside capture bounds (Stretch goal)}
 
 Finally, we would like to experiment with changing the virtual camera's depth, moving it gradually
 away from the capture plane. A further path to test is the ability of our approach to esimate novel
@@ -169,7 +169,7 @@ Our training datasets will be Lytro captures since it represents a standardized 
 widely available, for example from Stanford at http://lightfields.stanford.edu/LF2016.html.
 Because Lytro images are consistently formatted, we should be able to easily test our code with many different
 light fields. We also want to test this approach with a camera array, and we could easily adapt our preprocessing
-to accept the Stanford Multi-Camera Array. We won't be considering more free form light fields, such as those
+to accept the Stanford Multi-Camera Array. We will not be considering more free form light fields, such as those
 captured by handheld phone cameras, because of the added complexity of different camera orientations.
 
 \section{Questions to be Answered}
