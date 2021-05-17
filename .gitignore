@@ -421,3 +421,4 @@ TSWLatexianTemp*
 
 # glossaries
 *.glstex
+.DS_Store
