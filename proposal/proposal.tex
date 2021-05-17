@@ -99,7 +99,9 @@ be trained at the same time, which lets the disparity estimator become tuned to 
 Our goal is to reimplement the paper \textit{Learning-Based View Synthesis for Light Field Cameras} by 
 Kalantari \etal~\cite{LearningViewSynthesis} and additionally try to apply this technique to non-Lytro camera
 array captures. Further, we would like to investigate rendering novel views outside of the planar
-quadrilateral formed by the source images.
+quadrilateral formed by the source images. To evaluate the performance of our model, we will use 
+the structural similarity index measure (SSIM) and peak signal to noise ratio (PSNR), which are the 
+same metrics used by the original paper.
 
 \section{Milestones}
 
@@ -119,8 +121,6 @@ accepts the 4 sampled images along with their position information as input, and
 attempts to produce the novel view requested. As Kalantari \etal show, this should be able
 to create the novel view, but the result should be blurry and low detail. This is a good
 progress check to ensure we can actually train the network correctly.
-
-We estimate that up to this point should take approximately a week.
 
 \subsection{Two-Part CNN With Disparity Estimation (May 25th)}
 
