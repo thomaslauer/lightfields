@@ -2,14 +2,18 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from utils import load_image, extract_usable_images
 from tqdm import tqdm
+import imageio
 
 class LytroDataset(Dataset):
     STRIDE = 16
     TRAIN = 60
 
-    def __init__(self, lightFieldPaths: list[str], training=False):
+    def __init__(self, lightFieldPaths: list[str], training=False, load_raw=False):
         self.training = training
-        self.lightFields = [extract_usable_images(load_image(path)) for path in tqdm(lightFieldPaths)]
+        if load_raw:
+            self.lightFields = [imageio.imread(path).astype(np.float16) / 255 for path in tqdm(lightFieldPaths)]
+        else:
+            self.lightFields = [extract_usable_images(load_image(path)) for path in tqdm(lightFieldPaths)]
 
     def __len__(self):
         if self.training:
