@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+#m Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -424,3 +424,11 @@ TSWLatexianTemp*
 .DS_Store
 
 # MORE MATLAB GULLSHIT
+
+# Datasets
+datasets/
+# Outputs
+output/
+
+# Checkpoints
+src/checkpoints/

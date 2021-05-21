@@ -21,5 +21,5 @@ for r in range(8):
         print(r, c)
         imgR = r + offset
         imgC = c + offset
-        saveImg(fullImg, imgR, imgC, f"{outfolder}/0{r+1}_0{c+1}.png")
+        saveImg(fullImg ** (1/2.2), imgR, imgC, f"{outfolder}/0{r+1}_0{c+1}.png")
         counter += 1
