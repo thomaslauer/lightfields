@@ -2,8 +2,10 @@ import numpy as np
 import imageio
 import pathlib
 
+
 def get_checkpoint_path(epoch):
     return f"checkpoints/checkpoint_{epoch}.pth"
+
 
 def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
     """Returns the usable section of the lightfield"""
@@ -30,13 +32,26 @@ def load_image(path):
     bitdepth = 16 if img.dtype == np.uint16 else 8
     return img.astype(np.float16) / (2 ** bitdepth - 1)
 
+
 def torch2np_color(img: np.ndarray) -> np.ndarray:
     """Converts from torch RGB x W x H to W x H x RGB"""
     return np.moveaxis(img, 0, -1)
+
 
 def np2torch_color(img: np.ndarray) -> np.ndarray:
     """Converts from torch W x H x RGB to RGB x W x H"""
     return np.moveaxis(img, -1, 0)
 
+
 def mkdirp(directory):
     pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
+
+
+def load_extracted(data):
+    h, w = data.shape
+    return data.reshape((8, 8, 3, h // 8, w // 24)).astype(np.float16) / 255
+
+
+def save_extracted(data):
+    _8, _8, _3, h, w = data.shape
+    return (data.reshape((h * 8, w * 3 * 8)) * 255).astype(np.uint8)

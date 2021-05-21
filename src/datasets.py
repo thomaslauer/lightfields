@@ -1,15 +1,20 @@
-from torch.utils.data import Dataset, DataLoader
+import imageio
+from torch.utils.data import Dataset
 import numpy as np
-from utils import load_image, extract_usable_images
+from utils import load_image, extract_usable_images, load_extracted
 from tqdm import tqdm
+
 
 class LytroDataset(Dataset):
     STRIDE = 16
     TRAIN = 60
 
-    def __init__(self, lightFieldPaths: list[str], training=False):
+    def __init__(self, lightFieldPaths: list[str], training=False, cropped=False):
         self.training = training
-        self.lightFields = [extract_usable_images(load_image(path)) for path in tqdm(lightFieldPaths)]
+        if cropped:
+            self.lightFields = [load_extracted(imageio.imread(path)) for path in tqdm(lightFieldPaths)]
+        else:
+            self.lightFields = [extract_usable_images(load_image(path)) for path in tqdm(lightFieldPaths)]
 
     def __len__(self):
         if self.training:
@@ -46,7 +51,7 @@ class LytroDataset(Dataset):
             # patch size
             xSize = (imgX - self.TRAIN + 1) // self.STRIDE
             ySize = (imgY - self.TRAIN + 1) // self.STRIDE
-            
+
             patchX = (idx // 8 // 8) % xSize
             patchY = (idx // 8 // 8 // xSize) % ySize
 
@@ -61,7 +66,7 @@ class LytroDataset(Dataset):
 
             xStart = patchX * self.STRIDE
             yStart = patchY * self.STRIDE
-            
+
             source = np.vstack((
                 # Top left (0, 0)
                 self.lightFields[field][0, 0, :, xStart:xStart+self.TRAIN, yStart:yStart+self.TRAIN],
@@ -88,7 +93,7 @@ class LytroDataset(Dataset):
                 np.full(uvSize, targetY / 7, dtype=np.float16)
             ))
             target = self.lightFields[field][targetX, targetY, :, xStart+p:xStart+outsize, yStart+p:yStart+outsize]
-            
+
             return source, target
         else:
             imgShape = (1,) + self.lightFields[0].shape[3:5]
@@ -96,7 +101,7 @@ class LytroDataset(Dataset):
 
             if field > len(self.lightFields):
                 raise Exception(f"well crap, you got too many fields {field}")
-            
+
             source = np.vstack((
                 # Top left (0, 0)
                 self.lightFields[field][0, 0],
@@ -123,5 +128,5 @@ class LytroDataset(Dataset):
                 np.full(imgShape, targetY / 7, dtype=np.float16)
             ))
             target = self.lightFields[field][targetX, targetY, :, p:-p, p:-p]
-            
+
             return source, target
