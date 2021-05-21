@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 from utils import load_image, extract_usable_images, load_extracted
 from tqdm import tqdm
+import imageio
 
 
 class LytroDataset(Dataset):
