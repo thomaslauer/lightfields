@@ -30,7 +30,7 @@ def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
 def load_image(path):
     img = imageio.imread(path)
     bitdepth = 16 if img.dtype == np.uint16 else 8
-    return img.astype(np.float16) / (2 ** bitdepth - 1)
+    return img.astype(np.float32) / (2 ** bitdepth - 1)
 
 
 def torch2np_color(img: np.ndarray) -> np.ndarray:
@@ -49,7 +49,7 @@ def mkdirp(directory):
 
 def load_extracted(data):
     h, w = data.shape
-    return data.reshape((8, 8, 3, h // 8, w // 24)).astype(np.float16) / 255
+    return np.array(data.reshape((8, 8, 3, h // 8, w // 24))).astype(np.float32) / 255
 
 
 def save_extracted(data):

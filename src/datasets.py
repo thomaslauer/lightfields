@@ -72,26 +72,26 @@ class LytroDataset(Dataset):
                 # Top left (0, 0)
                 self.lightFields[field][0, 0, :, xStart:xStart+self.TRAIN, yStart:yStart+self.TRAIN],
                 # Top left U, V
-                np.full(uvSize, 0, dtype=np.float16),
-                np.full(uvSize, 0, dtype=np.float16),
+                np.full(uvSize, 0, dtype=np.float32),
+                np.full(uvSize, 0, dtype=np.float32),
                 # Top right (0, 1)
                 self.lightFields[field][0, 7, :, xStart:xStart+self.TRAIN, yStart:yStart+self.TRAIN],
                 # Top right U, V
-                np.full(uvSize, 0, dtype=np.float16),
-                np.full(uvSize, 1, dtype=np.float16),
+                np.full(uvSize, 0, dtype=np.float32),
+                np.full(uvSize, 1, dtype=np.float32),
                 # Bottom left (1, 0)
                 self.lightFields[field][7, 0, :, xStart:xStart+self.TRAIN, yStart:yStart+self.TRAIN],
                 # Bottom left U, V
-                np.full(uvSize, 1, dtype=np.float16),
-                np.full(uvSize, 0, dtype=np.float16),
+                np.full(uvSize, 1, dtype=np.float32),
+                np.full(uvSize, 0, dtype=np.float32),
                 # Bottom right (1, 1)
                 self.lightFields[field][7, 7, :, xStart:xStart+self.TRAIN, yStart:yStart+self.TRAIN],
                 # Bottom right U, V
-                np.full(uvSize, 1, dtype=np.float16),
-                np.full(uvSize, 1, dtype=np.float16),
+                np.full(uvSize, 1, dtype=np.float32),
+                np.full(uvSize, 1, dtype=np.float32),
                 # U', V'
-                np.full(uvSize, targetX / 7, dtype=np.float16),
-                np.full(uvSize, targetY / 7, dtype=np.float16)
+                np.full(uvSize, targetX / 7, dtype=np.float32),
+                np.full(uvSize, targetY / 7, dtype=np.float32)
             ))
             target = self.lightFields[field][targetX, targetY, :, xStart+p:xStart+outsize, yStart+p:yStart+outsize]
 
@@ -107,26 +107,26 @@ class LytroDataset(Dataset):
                 # Top left (0, 0)
                 self.lightFields[field][0, 0],
                 # Top left U, V
-                np.full(imgShape, 0, dtype=np.float16),
-                np.full(imgShape, 0, dtype=np.float16),
+                np.full(imgShape, 0, dtype=np.float32),
+                np.full(imgShape, 0, dtype=np.float32),
                 # Top right (0, 1)
                 self.lightFields[field][0, 7],
                 # Top right U, V
-                np.full(imgShape, 0, dtype=np.float16),
-                np.full(imgShape, 1, dtype=np.float16),
+                np.full(imgShape, 0, dtype=np.float32),
+                np.full(imgShape, 1, dtype=np.float32),
                 # Bottom left (1, 0)
                 self.lightFields[field][7, 0],
                 # Bottom left U, V
-                np.full(imgShape, 1, dtype=np.float16),
-                np.full(imgShape, 0, dtype=np.float16),
+                np.full(imgShape, 1, dtype=np.float32),
+                np.full(imgShape, 0, dtype=np.float32),
                 # Bottom right (1, 1)
                 self.lightFields[field][7, 7],
                 # Bottom right U, V
-                np.full(imgShape, 1, dtype=np.float16),
-                np.full(imgShape, 1, dtype=np.float16),
+                np.full(imgShape, 1, dtype=np.float32),
+                np.full(imgShape, 1, dtype=np.float32),
                 # U', V'
-                np.full(imgShape, targetX / 7, dtype=np.float16),
-                np.full(imgShape, targetY / 7, dtype=np.float16)
+                np.full(imgShape, targetX / 7, dtype=np.float32),
+                np.full(imgShape, targetY / 7, dtype=np.float32)
             ))
             target = self.lightFields[field][targetX, targetY, :, p:-p, p:-p]
 

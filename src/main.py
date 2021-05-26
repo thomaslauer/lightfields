@@ -14,14 +14,13 @@ import utils
 def train(net, train_loader, optimizer, device, epoch):
 
     net.train()
-    net.half()
 
-    print(f"Training epoch {epoch+1}")
+    print(f"Training epoch {epoch}")
     for batch_data, target in tqdm(train_loader):
         optimizer.zero_grad()
 
-        batch_data = batch_data.to(device).half()
-        target = target.to(device).half()
+        batch_data = batch_data.to(device)
+        target = target.to(device)
 
         predicted = net(batch_data)
         loss = F.mse_loss(predicted, target)
@@ -65,12 +64,13 @@ def main():
     #     "../datasets/reflective_18_eslf.png",
     # ]
 
-    lightFieldPaths = glob.glob('../datasets/flowers_plants/raw/*_eslf.png')
+    # lightFieldPaths = glob.glob('../datasets/flowers_plants/raw/*_eslf.png')
+    lightFieldPaths = glob.glob('../datasets/flowers_cropped/*.png')
 
-    # lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
+    lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
     # lightFieldPaths = lightFieldPaths[0:3]
 
-    full_dataset = datasets.LytroDataset(lightFieldPaths, training=True)
+    full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
 
     train_size = int(0.8 * len(full_dataset))
     validate_size = len(full_dataset) - train_size
@@ -91,7 +91,6 @@ def main():
         net.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1)))
 
     # move net to cuda BEFORE setting optimizer variables
-    net.half()
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
 
