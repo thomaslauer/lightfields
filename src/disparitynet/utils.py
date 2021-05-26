@@ -9,13 +9,13 @@ def get_checkpoint_path(epoch):
 
 def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
     """Returns the usable section of the lightfield"""
-    # img[r,c, C, ix,iy]
+    # img[r,c, ix,iy, 3]
     # Lytro images are 14x14 per subimage in linear RGBA
     # All sub areas should have an 8x8 sub region available which means 3px offset per side (8+3+3 = 14)
     # Additionally, slice to only RGB fields
     imgX = rawLightField.shape[0] // 14
     imgY = rawLightField.shape[1] // 14
-    shape = (8, 8, 3, imgX, imgY)
+    shape = (8, 8, imgX, imgY, 3)
     img = np.empty(shape, dtype=np.float16)
     offset = 3
     for r in range(8):
@@ -23,7 +23,7 @@ def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
             imgR = r + offset
             imgC = c + offset
             # moveaxis to make color the first index
-            img[r, c, ...] = np2torch_color(rawLightField[imgR::14, imgC::14, :3])
+            img[r, c, ...] = rawLightField[imgR::14, imgC::14, :3]
     return img
 
 
@@ -48,10 +48,10 @@ def mkdirp(directory):
 
 
 def load_extracted(data):
-    h, w = data.shape
-    return np.array(data.reshape((8, 8, 3, h // 8, w // 24))).astype(np.float32) / 255
+    h, w, c = data.shape
+    return np.array(data.reshape((8, 8, h // 64, w, 3))).astype(np.float32) / 255
 
 
 def save_extracted(data):
-    _8, _8, _3, h, w = data.shape
-    return (data.reshape((h * 8, w * 3 * 8)) * 255).astype(np.uint8)
+    _8, _8, h, w, _3 = data.shape
+    return (data.reshape((h * 64, w, 3)) * 255).astype(np.uint8)

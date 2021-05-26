@@ -13,9 +13,9 @@ class LytroDataset(Dataset):
     def __init__(self, lightFieldPaths: list[str], training=False, cropped=False):
         self.training = training
         if cropped:
-            self.lightFields = [load_extracted(imageio.imread(path)) for path in tqdm(lightFieldPaths)]
+            self.lightFields = [np.moveaxis(load_extracted(imageio.imread(path)), -1, 2) for path in tqdm(lightFieldPaths)]
         else:
-            self.lightFields = [extract_usable_images(load_image(path)) for path in tqdm(lightFieldPaths)]
+            self.lightFields = [np.moveaxis(extract_usable_images(load_image(path)), -1, 2) for path in tqdm(lightFieldPaths)]
 
     def __len__(self):
         if self.training:

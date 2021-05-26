@@ -84,7 +84,7 @@ def main():
 
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=128, num_workers=4)
 
-    net = networks.NaiveNet()
+    net = networks.FullNet(device)
 
     if params.start_epoch != 0:
         # load previous epoch checkpoint
