@@ -18,3 +18,5 @@ class NaiveNet(nn.Module):
         x = F.relu(self.conv3(x))
         x = self.conv4(x)
         return x
+
+
