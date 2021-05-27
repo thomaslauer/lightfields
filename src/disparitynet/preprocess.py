@@ -7,7 +7,7 @@ delta_disparity = 21
 # Takes in a lightfield image of format 8x8xRxCx3
 # u is down, v is right
 def prepare_depth_features(LF, u, v):
-    _8, _8, r, c, _3 = LF.size
+    _8, _8, r, c, _3 = LF.shape
     grayLF = np.dot(LF, [0.299, 0.587, 0.114])
 
     features_stack = np.zeros(r, c, depth_resolution * 2, dtype=np.float32)
