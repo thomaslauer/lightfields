@@ -22,7 +22,10 @@ def train(net, train_loader, optimizer, device, epoch):
         batch_data = batch_data.to(device)
         target = target.to(device)
 
-        predicted = net(batch_data)
+        images = batch_data[:,:-2,:,:]
+        novelLocation = batch_data[:,-2:,:,:]
+
+        predicted = net(batch_data, images, novelLocation)
         loss = F.mse_loss(predicted, target)
         loss.backward()
         optimizer.step()
@@ -42,7 +45,10 @@ def validate(net, validation_loader, device, epoch):
             batch_data = batch_data.to(device)
             target = target.to(device)
 
-            predicted = net(batch_data)
+            images = batch_data[:,:-2,:,:]
+            novelLocation = batch_data[:,-2:,:,:]
+
+            predicted = net(batch_data, images, novelLocation)
             loss = F.mse_loss(predicted, target)
 
             loss_sum += torch.sum(loss.cpu())
