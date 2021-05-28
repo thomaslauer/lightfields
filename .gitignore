@@ -432,3 +432,5 @@ output/
 
 # Checkpoints
 src/naivenet/checkpoints/
+src/disparitynet/checkpoints/
+
