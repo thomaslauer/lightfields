@@ -71,7 +71,7 @@ class FullNet(nn.Module):
             projectedLocations = grid + (p_i - novelLocation) * dupedDisparity
 
 
-            warpedImg = F.grid_sample(currentImg, projectedLocations.float())
+            warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic')
             warpedImages.append(warpedImg)
         
 
