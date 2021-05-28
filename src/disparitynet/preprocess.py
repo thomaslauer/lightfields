@@ -3,9 +3,11 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import imageio
 import utils
+from tqdm import tqdm
 
 depth_resolution = 100
 delta_disparity = 21
+DEBUG = False
 
 # Takes in a lightfield image of format 8x8xRxCx3
 # u is down, v is right
@@ -19,7 +21,7 @@ def prepare_depth_features(LF, u, v):
 
     x_view, y_view = (g.flatten() - sub for g, sub in zip(np.mgrid[0:2, 0:2], [u, v]))
 
-    for ind_depth, cur_depth in enumerate(np.linspace(-delta_disparity, delta_disparity, depth_resolution)):
+    for ind_depth, cur_depth in enumerate(tqdm(np.linspace(-delta_disparity, delta_disparity, depth_resolution))):
         sheared_LF = np.empty((4, r, c), dtype=np.float32)
         X, Y = np.mgrid[0:r, 0:c]
 
@@ -40,11 +42,11 @@ def prepare_depth_features(LF, u, v):
                 ndimage.shift(grayLF[iax, iay], [-shiftX, -shiftY], output=sheared_LF[idx], cval=np.nan)
                 idx += 1
 
-        fig, axs = plt.subplots(2, 2)
-        for x, img in zip(axs.flatten(), sheared_LF):
-            x.imshow(img)
-        plt.show()
-        # exit()
+        if DEBUG:
+            fig, axs = plt.subplots(2, 2)
+            for x, img in zip(axs.flatten(), sheared_LF):
+                x.imshow(img)
+            plt.show()
 
         features_stack[..., ind_depth] = defocus_response(sheared_LF)
         features_stack[..., depth_resolution + ind_depth] = corresp_response(sheared_LF)
@@ -68,4 +70,4 @@ def test(w=200, h=300):
 if __name__ == "__main__":
     # test()
     prepare_depth_features(utils.load_extracted(imageio.imread(
-        "../datasets/people_cropped/people_6_eslf.png")), 0.5, 0.25)
+        "../datasets/people_cropped/people_6_eslf.png")), 1, 1)
