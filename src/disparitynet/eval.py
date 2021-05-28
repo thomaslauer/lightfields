@@ -28,8 +28,8 @@ def main():
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    net = networks.NaiveNet()
-    net.load_state_dict(torch.load(utils.get_checkpoint_path(43)))
+    net = networks.FullNet(device)
+    net.load_state_dict(torch.load(utils.get_checkpoint_path(8)))
     net = net.to(device)
     net.eval()
 
@@ -38,9 +38,13 @@ def main():
         y = i % 8 + 1
         data = torch.unsqueeze(torch.Tensor(data), 0)
         data = data.to(device)
-        output = net(data).cpu()
+
+        images = data[:,:-2,:,:]
+        novelLocation = data[:,-2:,:,:]
+
+        output = net(data, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy() ** (1/2.2))
-        imageio.imwrite(f"output/epoch1/nn_0{y}_0{x}.png", img)
+        imageio.imwrite(f"output/epoch8/nn_0{y}_0{x}.png", img)
 
 
     return
