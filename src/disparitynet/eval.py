@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 import imageio
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import datasets
 import networks
@@ -33,7 +34,7 @@ def main():
     net = net.to(device)
     net.eval()
 
-    for i, (data, _) in enumerate(tqdm(full_dataset)):
+    for i, (depth, color, target) in enumerate(tqdm(full_dataset)):
         x = i // 8 + 1
         y = i % 8 + 1
         data = torch.unsqueeze(torch.Tensor(data), 0)
@@ -41,6 +42,12 @@ def main():
 
         images = data[:,:-2,:,:]
         novelLocation = data[:,-2:,:,:]
+
+        disp = net.disparity(data).detach().cpu().numpy()[0]
+        disp = np.moveaxis(disp, 0, 2)
+        # plt.imshow(disp)
+        # plt.show()
+        
 
         output = net(data, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy() ** (1/2.2))

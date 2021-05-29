@@ -14,8 +14,9 @@ class FullNet(nn.Module):
         # bx(200 + 3*4 + 4)x60x60
 
         # disparityFeatures: (batch x 200 x H x W)
-        # images: (batch x RGBUV x W x H)
-        # novelLocation: (batch x W x H x UV)
+        # images: (batch x RGBUV x W-6 x H-6)
+        # novelLocation: (batch x W-6 x H-6 x UV)
+        # result: RGB x W-12 x H-12
 
         # Run disparity
         x = self.disparity(disparityFeatures)
@@ -59,7 +60,7 @@ class FullNet(nn.Module):
 
         warpedImages = []
 
-        for i in range(images.shape[1] // 5):
+        for i in range(4):
             currentImg = images[:, 5*i:5*i+3, :, :]
             p_i = images[:, 5*i+3:5*i+5, :, :]
 
@@ -69,7 +70,6 @@ class FullNet(nn.Module):
             novelLocation = novelLocation[:, :disparity.shape[1], :disparity.shape[2], :]
 
             projectedLocations = grid + (p_i - novelLocation) * dupedDisparity
-
 
             warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic')
             warpedImages.append(warpedImg)
@@ -86,7 +86,7 @@ class DisparityNet(nn.Module):
 
     def __init__(self):
         super(DisparityNet, self).__init__()
-        self.conv1 = nn.Conv2d(22,  100, kernel_size=(7,7))
+        self.conv1 = nn.Conv2d(200,  100, kernel_size=(7,7))
         self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5))
         self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3))
         self.conv4 = nn.Conv2d(50,  1,   kernel_size=(1,1))
@@ -103,9 +103,9 @@ class DisparityNet(nn.Module):
 class ColorNet(nn.Module):
     def __init__(self):
         super(ColorNet, self).__init__()
-        self.conv1 = nn.Conv2d(13,  100, kernel_size=(7,7), padding=(3,3))
-        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5), padding=(2,2))
-        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3), padding=(1,1))
+        self.conv1 = nn.Conv2d(13,  100, kernel_size=(7,7))
+        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5))
+        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3))
         self.conv4 = nn.Conv2d(50,  3,   kernel_size=(1,1))
 
     def forward(self, x):

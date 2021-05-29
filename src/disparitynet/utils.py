@@ -6,6 +6,16 @@ import pathlib
 def get_checkpoint_path(epoch):
     return f"checkpoints/checkpoint_{epoch}.pth"
 
+def get_idx_folder(folder, idx):
+    return f"{folder}/{idx}"
+
+def get_processed_patch_name(folder, idx, u, v, color=False):
+
+    if color:
+        return f"{get_idx_folder(folder, idx)}/{u}_{v}_color.npy"
+    else:
+        return f"{get_idx_folder(folder, idx)}/{u}_{v}_depth.npy"
+
 
 def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
     """Returns the usable section of the lightfield"""

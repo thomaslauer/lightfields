@@ -16,16 +16,18 @@ def train(net, train_loader, optimizer, device, epoch):
     net.train()
 
     print(f"Training epoch {epoch}")
-    for batch_data, target in tqdm(train_loader):
+    for depth, color, target in tqdm(train_loader):
         optimizer.zero_grad()
 
-        batch_data = batch_data.to(device)
+        depth = depth.to(device)
+        color = color.to(device)
         target = target.to(device)
 
-        images = batch_data[:,:-2,:,:]
-        novelLocation = batch_data[:,-2:,:,:]
+        images = color[:,:-2,:,:]
+        novelLocation = color[:,-2:,:,:]
 
-        predicted = net(batch_data, images, novelLocation)
+        predicted = net(depth, images, novelLocation)
+
         loss = F.mse_loss(predicted, target)
         loss.backward()
         optimizer.step()
@@ -41,14 +43,16 @@ def validate(net, validation_loader, device, epoch):
     net.eval()
 
     with torch.no_grad():
-        for batch_data, target in tqdm(validation_loader):
-            batch_data = batch_data.to(device)
+        for depth, color, target in tqdm(validation_loader):
+
+            depth = depth.to(device)
+            color = color.to(device)
             target = target.to(device)
 
-            images = batch_data[:,:-2,:,:]
-            novelLocation = batch_data[:,-2:,:,:]
+            images = color[:,:-2,:,:]
+            novelLocation = color[:,-2:,:,:]
 
-            predicted = net(batch_data, images, novelLocation)
+            predicted = net(depth, images, novelLocation)
             loss = F.mse_loss(predicted, target)
 
             loss_sum += torch.sum(loss.cpu())
@@ -70,10 +74,10 @@ def main():
     #     "../datasets/reflective_18_eslf.png",
     # ]
 
-    # lightFieldPaths = glob.glob('../datasets/flowers_plants/raw/*_eslf.png')
     lightFieldPaths = glob.glob('../datasets/flowers_cropped/*.png')
+    lightFieldPaths = ['../datasets/flowers_cropped/flowers_plants_9_eslf.png']
 
-    lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
+    # lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
     # lightFieldPaths = lightFieldPaths[0:3]
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
@@ -85,10 +89,12 @@ def main():
         full_dataset, [train_size, validate_size]
     )
 
+    batch_size = 64
+    workers = 2
 
-    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=128, num_workers=4)
+    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
 
-    validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=128, num_workers=4)
+    validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
 
     net = networks.FullNet(device)
 
@@ -99,6 +105,7 @@ def main():
     # move net to cuda BEFORE setting optimizer variables
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+
 
     for epoch in range(params.start_epoch, params.start_epoch + params.epochs):
         train(net, train_loader, optimizer, device, epoch)

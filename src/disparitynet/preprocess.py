@@ -9,34 +9,43 @@ depth_resolution = 100
 delta_disparity = 21
 DEBUG = False
 
+"""
+Pipeline:
+ <pre-crop> (out of line)
+ init:
+ Load images
+   prepare_depth LF: 8*8*3*r*c*(4) ~192    disp: 200*r*c*(4)*64 ~12800
+ Create patches (train only)
+   np.save
+ run: np.load
+"""
+
 # Takes in a lightfield image of format 8x8xRxCx3
 # u is down, v is right
 
-
-def prepare_depth_features(LF, u, v):
+def crop_gray(LF):
     _8, _8, r, c, _3 = LF.shape
-    grayLF = np.dot(LF, [0.299, 0.587, 0.114])
+    cropped = np.empty((2,2,r,c,3), dtype=np.float32)
+    grayLF = np.array([
+        [np.dot(LF[0, 0], [0.299, 0.587, 0.114]), np.dot(LF[0, 7], [0.299, 0.587, 0.114])],
+        [np.dot(LF[7, 0], [0.299, 0.587, 0.114]), np.dot(LF[7, 7], [0.299, 0.587, 0.114])]
+    ])
+    return grayLF
 
-    features_stack = np.zeros((r, c, depth_resolution * 2), dtype=np.float32)
+def prepare_depth_features(grayLF, u, v):
+    _2, _2, r, c = grayLF.shape
+
+    features_stack = np.zeros((depth_resolution * 2, r, c), dtype=np.float32)
 
     x_view, y_view = (g.flatten() - sub for g, sub in zip(np.mgrid[0:2, 0:2], [u, v]))
 
-    for ind_depth, cur_depth in enumerate(tqdm(np.linspace(-delta_disparity, delta_disparity, depth_resolution))):
+    # print("Preparing depth features")
+    for ind_depth, cur_depth in enumerate(np.linspace(-delta_disparity, delta_disparity, depth_resolution)):
         sheared_LF = np.empty((4, r, c), dtype=np.float32)
-        X, Y = np.mgrid[0:r, 0:c]
-
-        # idx = 0
-        # for iax in [0, 7]:
-        #     for iay in [0, 7]:
-        #         curY = Y + cur_depth * y_view[idx]
-        #         curX = X + cur_depth * x_view[idx]
-        #         points = np.array([X, Y]).reshape((-1, 2))
-        #         sheared_LF[idx] = interpolate.griddata(points, grayLF[iax, iay].flatten(), (curX, curY), method='cubic')
-        #         idx += 1
 
         idx = 0
-        for iax in [0, 7]:
-            for iay in [0, 7]:
+        for iax in [0, 1]:
+            for iay in [0, 1]:
                 shiftX = cur_depth * x_view[idx]
                 shiftY = cur_depth * y_view[idx]
                 ndimage.shift(grayLF[iax, iay], [-shiftX, -shiftY], output=sheared_LF[idx], cval=np.nan)
@@ -48,8 +57,8 @@ def prepare_depth_features(LF, u, v):
                 x.imshow(img)
             plt.show()
 
-        features_stack[..., ind_depth] = defocus_response(sheared_LF)
-        features_stack[..., depth_resolution + ind_depth] = corresp_response(sheared_LF)
+        features_stack[ind_depth] = defocus_response(sheared_LF)
+        features_stack[depth_resolution + ind_depth] = corresp_response(sheared_LF)
     return features_stack
 
 
@@ -69,5 +78,5 @@ def test(w=200, h=300):
 
 if __name__ == "__main__":
     # test()
-    prepare_depth_features(utils.load_extracted(imageio.imread(
-        "../datasets/people_cropped/people_6_eslf.png")), 1, 1)
+    prepare_depth_features(crop_gray(utils.load_extracted(imageio.imread(
+        "../datasets/flowers_cropped/flowers_plants_1_eslf.png"))), 1, 1)

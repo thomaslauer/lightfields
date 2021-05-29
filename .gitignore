@@ -434,3 +434,4 @@ output/
 src/naivenet/checkpoints/
 src/disparitynet/checkpoints/
 
+*.npy
