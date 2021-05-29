@@ -56,10 +56,12 @@ class Processor(object):
         return preprocess.prepare_depth_features(self.grayField, u / 7, v / 7)
 
 class LytroDataset(Dataset):
-    STRIDE = 32
+    STRIDE = 24
     TRAIN = 60
     TMP = f"{params.drive_path}/tmp2"
-    SAFE = False
+    SAFE = True
+    # NOTE: there will be some artefacts ilsn the corners which we want to avoid, so crop the edges
+    SIDE_CROP = 40
 
     def __init__(self, lightFieldPaths: list[str], training=False, cropped=False):
         self.training = training
@@ -87,6 +89,7 @@ class LytroDataset(Dataset):
                     mkdirp(imgDir)
                     print(f"({i}) Loading {path}")
                     rawLightField = readImage(path)
+                    rawLightField = rawLightField[:, :, self.SIDE_CROP:-self.SIDE_CROP, self.SIDE_CROP:-self.SIDE_CROP, :]
                     grayField = preprocess.crop_gray(rawLightField)
 
                     with ProcessPoolExecutor(max_workers=6) as executor:
