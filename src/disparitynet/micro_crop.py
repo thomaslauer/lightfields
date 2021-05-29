@@ -8,11 +8,16 @@ import utils
 INPUT = "../../datasets/flowers_plants/raw/*.png"
 OUTFOLDER = "../datasets/flowers_cropped"
 
-utils.mkdirp(OUTFOLDER)
-
-for img in tqdm(glob.glob(INPUT)):
+def process(img):
     base = pathlib.Path(img).name
     out_name = f"{OUTFOLDER}/{base}"
     raw_data = utils.extract_usable_images(utils.load_image(img))
     data = utils.save_extracted(raw_data)
     imageio.imwrite(out_name, data)
+
+utils.mkdirp(OUTFOLDER)
+
+if __name__ == '__main__':
+    files = glob.glob(INPUT)
+    with Pool(4) as p:
+        r = list(tqdm.tqdm(p.imap(process, files), total=len(files)))
