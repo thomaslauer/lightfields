@@ -58,10 +58,10 @@ class Processor(object):
 class LytroDataset(Dataset):
     STRIDE = 24
     TRAIN = 60
-    TMP = f"{params.drive_path}/tmp2"
-    SAFE = True
+    TMP = f"{params.drive_path}/patches"
+    SAFE = False
     # NOTE: there will be some artefacts ilsn the corners which we want to avoid, so crop the edges
-    SIDE_CROP = 40
+    SIDE_CROP = 60
 
     def __init__(self, lightFieldPaths: list[str], training=False, cropped=False):
         self.training = training
@@ -92,7 +92,7 @@ class LytroDataset(Dataset):
                     rawLightField = rawLightField[:, :, self.SIDE_CROP:-self.SIDE_CROP, self.SIDE_CROP:-self.SIDE_CROP, :]
                     grayField = preprocess.crop_gray(rawLightField)
 
-                    with ProcessPoolExecutor(max_workers=6) as executor:
+                    with ProcessPoolExecutor(max_workers=8) as executor:
                         results = list(tqdm(executor.map(Processor(imgDir, rawLightField, grayField, self.TRAIN, self.STRIDE), coords), total=len(coords)))
 
                 for r in range(results[0]):

@@ -74,15 +74,10 @@ def main():
     #     "../datasets/reflective_18_eslf.png",
     # ]
 
-    lightFieldPaths = glob.glob('../datasets/flowers_cropped/*.png')
-    # lightFieldPaths = ['../datasets/flowers_cropped/flowers_plants_9_eslf.png']
-
-    # lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
-    lightFieldPaths = lightFieldPaths[0:5]
-
+    lightFieldPaths = glob.glob(f'{params.drive_path}/datasets/microcropped_images/*.png')
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
 
-    train_size = int(0.8 * len(full_dataset))
+    train_size = int(0.9 * len(full_dataset))
     validate_size = len(full_dataset) - train_size
 
     train_dataset, validate_dataset = torch.utils.data.random_split(
