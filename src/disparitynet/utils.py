@@ -80,4 +80,4 @@ def adjust_tone(img):
     out = rgb_to_hsv(out)
     out[..., 1] *= 1.5
     out = hsv_to_rgb(out)
-    return out
+    return np.clip(out, 0, 1)

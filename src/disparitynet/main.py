@@ -66,7 +66,7 @@ def validate(net, validation_loader, device, epoch):
 
 
 def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
-    mkdirp(out_folder)
+    utils.mkdirp(out_folder)
     net.eval()
     with torch.no_grad():
         depth = torch.unsqueeze(torch.Tensor(depth), 0).to(device)
@@ -98,7 +98,7 @@ def main():
 
     print("Building test data")
     # Fetch test data
-    test_data = datasets.LytroDataset(flower_9, training=False, cropped=True)
+    test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
     test_depth, test_color = test_data[36]
     # clear memory if possible...
     test_data = None
@@ -112,7 +112,7 @@ def main():
     )
 
     batch_size = 64
-    workers = 4
+    workers = 3
 
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
@@ -127,7 +127,7 @@ def main():
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
     if params.start_epoch != 0:
-        test_image(net, test_depth, test_color, device, params.start_epoch, out_folder="./eval_test")
+        test_image(net, test_depth, test_color, device, params.start_epoch - 1, out_folder="./eval_test")
 
     for epoch in range(params.start_epoch, params.start_epoch + params.epochs):
         train(net, train_loader, optimizer, device, epoch)

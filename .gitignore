@@ -433,5 +433,6 @@ output/
 # Checkpoints
 src/naivenet/checkpoints/
 src/disparitynet/checkpoints/
+src/disparitynet/eval_test/
 
 *.npy
