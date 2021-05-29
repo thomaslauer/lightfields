@@ -75,10 +75,10 @@ def main():
     # ]
 
     lightFieldPaths = glob.glob('../datasets/flowers_cropped/*.png')
-    lightFieldPaths = ['../datasets/flowers_cropped/flowers_plants_9_eslf.png']
+    # lightFieldPaths = ['../datasets/flowers_cropped/flowers_plants_9_eslf.png']
 
     # lightFieldPaths = lightFieldPaths[:len(lightFieldPaths)//2]
-    # lightFieldPaths = lightFieldPaths[0:3]
+    lightFieldPaths = lightFieldPaths[0:5]
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
 

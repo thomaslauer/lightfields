@@ -59,6 +59,7 @@ class LytroDataset(Dataset):
     STRIDE = 32
     TRAIN = 60
     TMP = f"{params.drive_path}/tmp2"
+    SAFE = False
 
     def __init__(self, lightFieldPaths: list[str], training=False, cropped=False):
         self.training = training
@@ -74,26 +75,34 @@ class LytroDataset(Dataset):
 
         coords = np.moveaxis(np.mgrid[0:8, 0:8].reshape((2, -1)), 0, -1)
 
-        for i, path in enumerate(lightFieldPaths):
-            base = Path(path).stem
+        if training:
+            for i, path in enumerate(lightFieldPaths):
+                base = Path(path).stem
 
-            imgDir = f"{self.TMP}/{base}"
-            mkdirp(imgDir)
-            print(f"({i}) Loading {path}")
-            rawLightField = readImage(path)
-            grayField = preprocess.crop_gray(rawLightField)
+                imgDir = f"{self.TMP}/{base}"
+                can_skip = not self.SAFE and os.path.exists(imgDir)
+                if can_skip:
+                    results = [max([int(p.stem) for p in Path(imgDir).iterdir()]) + 1]
+                else:
+                    mkdirp(imgDir)
+                    print(f"({i}) Loading {path}")
+                    rawLightField = readImage(path)
+                    grayField = preprocess.crop_gray(rawLightField)
 
-            with ProcessPoolExecutor(max_workers=6) as executor:
-                results = list(tqdm(executor.map(Processor(imgDir, rawLightField, grayField, self.TRAIN, self.STRIDE), coords), total=len(coords)))
+                    with ProcessPoolExecutor(max_workers=6) as executor:
+                        results = list(tqdm(executor.map(Processor(imgDir, rawLightField, grayField, self.TRAIN, self.STRIDE), coords), total=len(coords)))
 
-            for r in range(results[0]):
-                self.patches.append((imgDir, r))
+                for r in range(results[0]):
+                    self.patches.append((imgDir, r))
+        else:
+            self.rawLightFields = [readImage(path) for path in lightFieldPaths]
+
 
     def __len__(self):
         if self.training:
             return len(self.patches) * 64
         else:
-            raise Exception("TODO: Fix eval.py")
+            raise len(self.rawLightFields) * 64
 
     def __getitem__(self, idx):
         """
@@ -123,66 +132,64 @@ class LytroDataset(Dataset):
             depth = np.load(utils.get_processed_patch_name(folder, idx, targetX, targetY, color=False)).astype(np.float32)
 
             colorShape = (1, self.TRAIN - p*2, self.TRAIN - p*2)
-            color = np.vstack((
-                # Top left (0, 0)
-                np.load(utils.get_processed_patch_name(folder, idx, 0, 0, color=True))[:, p:-p, p:-p].astype(np.float32),
-                *self.uv(colorShape, 0, 0),
-                # Top right (0, 1)
-                np.load(utils.get_processed_patch_name(folder, idx, 0, 7, color=True))[:, p:-p, p:-p].astype(np.float32),
-                *self.uv(colorShape, 0, 1),
-                # Bottom left (1, 0)
-                np.load(utils.get_processed_patch_name(folder, idx, 7, 0, color=True))[:, p:-p, p:-p].astype(np.float32),
-                *self.uv(colorShape, 1, 0),
-                # Bottom right (1, 1)
-                np.load(utils.get_processed_patch_name(folder, idx, 7, 7, color=True))[:, p:-p, p:-p].astype(np.float32),
-                *self.uv(colorShape, 1, 1),
-                # U', V'
-                np.full(colorShape, u, dtype=np.float32),
-                np.full(colorShape, v, dtype=np.float32)
-            ))
+
+            color = self.assemble_color_net(
+                colorShape,
+                np.load(utils.get_processed_patch_name(folder, idx, 0, 0, color=True)),
+                np.load(utils.get_processed_patch_name(folder, idx, 0, 7, color=True)),
+                np.load(utils.get_processed_patch_name(folder, idx, 7, 0, color=True)),
+                np.load(utils.get_processed_patch_name(folder, idx, 7, 7, color=True)),
+                u,
+                v,
+                p,
+            )
 
             target = np.load(utils.get_processed_patch_name(folder, idx, targetX, targetY, color=True))[:, p*2:-p*2, p*2:-p*2].astype(np.float32)
 
             return depth, color, target
         else:
-            raise Exception("Ya done fucked up")
-            field = (idx // 8 // 8)
+            field = self.rawLightFields[patch]
+            grey = preprocess.crop_gray(field)
 
-            if field > len(self.lightFields):
-                raise Exception(f"well crap, you got too many fields {field}")
+            depth = preprocess.prepare_depth_features(grey, u, v)
 
-            file_name = self.depthNames[field][targetX][targetY]
-            depth = np.load(file_name)
-            
-            imgShape = (1, self.lightFields[field].shape[3] - p*2, self.lightFields[field].shape[4] - p*2)
-            color = self.assemble_color_net(u, v, field, imgShape, p, p)
-            p2 = p*2
-            target = self.lightFields[field][targetX, targetY, :, p2:-p2, p2:-p2]
-            return depth, color, target
+            field = np.moveaxis(field, -1, 2)
+
+            colorShape = (1, field.shape[3] - p*2, field.shape[4] - p*2)
+
+            color = self.assemble_color_net(
+                colorShape,
+                field[0, 0],
+                field[0, 7],
+                field[7, 0],
+                field[7, 7],
+                u,
+                v,
+                p,
+            )
+
+            return depth, color
 
     def uv(self, shape, u, v):
         return np.full(shape, u, dtype=np.float32), np.full(shape, v, dtype=np.float32)
 
-    """ 
-    def assemble_color_net(self, targetU, targetV, field, patchShape, xStart=0, yStart=0):
-        _1, r, c = patchShape
-        source = np.vstack((
+    def assemble_color_net(self, colorShape, tl, tr, bl, br, u, v, p=6):
+        color = np.vstack((
             # Top left (0, 0)
-            self.lightFields[field][0, 0, :, xStart:xStart+r, yStart:yStart+c],
-            *self.uv(patchShape, 0, 0),
+            tl[:, p:-p, p:-p].astype(np.float32),
+            *self.uv(colorShape, 0, 0),
             # Top right (0, 1)
-            self.lightFields[field][0, 7, :, xStart:xStart+r, yStart:yStart+c],
-            *self.uv(patchShape, 0, 1),
+            tr[:, p:-p, p:-p].astype(np.float32),
+            *self.uv(colorShape, 0, 1),
             # Bottom left (1, 0)
-            self.lightFields[field][7, 0, :, xStart:xStart+r, yStart:yStart+c],
-            *self.uv(patchShape, 1, 0),
+            bl[:, p:-p, p:-p].astype(np.float32),
+            *self.uv(colorShape, 1, 0),
             # Bottom right (1, 1)
-            self.lightFields[field][7, 7, :, xStart:xStart+r, yStart:yStart+c],
-            *self.uv(patchShape, 1, 1),
+            br[:, p:-p, p:-p].astype(np.float32),
+            *self.uv(colorShape, 1, 1),
             # U', V'
-            np.full(patchShape, targetU, dtype=np.float32),
-            np.full(patchShape, targetV, dtype=np.float32)
+            np.full(colorShape, u, dtype=np.float32),
+            np.full(colorShape, v, dtype=np.float32)
         ))
-        return source
-    """ 
+        return color
 
