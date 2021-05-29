@@ -1,13 +1,16 @@
 import numpy as np
 import imageio
 import pathlib
+from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
 
 def get_checkpoint_path(epoch):
     return f"checkpoints/checkpoint_{epoch}.pth"
 
+
 def get_idx_folder(folder, idx):
     return f"{folder}/{idx}"
+
 
 def get_processed_patch_name(folder, idx, u, v, color=False):
 
@@ -65,3 +68,16 @@ def load_extracted(data):
 def save_extracted(data):
     _8, _8, h, w, _3 = data.shape
     return (data.reshape((h * 64, w, 3)) * 255).astype(np.uint8)
+
+
+def adjust_tone(img):
+    """
+    Use the same tone adjustment as the ref impl. Lytro saves very bad saturation
+    in raw format, so bump it UPPPP!!!
+    """
+    out = np.clip(img, 0, 1)
+    out = out ** (1 / 1.5)
+    out = rgb_to_hsv(out)
+    out[..., 1] *= 1.5
+    out = hsv_to_rgb(out)
+    return out

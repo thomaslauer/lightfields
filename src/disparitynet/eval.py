@@ -40,21 +40,21 @@ def main():
         depth = torch.unsqueeze(torch.Tensor(depth), 0).to(device)
         color = torch.unsqueeze(torch.Tensor(color), 0).to(device)
 
-        images = color[:,:-2,:,:]
-        novelLocation = color[:,-2:,:,:]
+        images = color[:, :-2, :, :]
+        novelLocation = color[:, -2:, :, :]
 
         # disp = net.disparity(depth).detach().cpu().numpy()[0]
         # disp = np.moveaxis(disp, 0, 2)
         # plt.imshow(disp)
         # plt.show()
-        
 
         output = net(depth, images, novelLocation).cpu()
-        img = utils.torch2np_color(output[0].detach().numpy() ** (1/2.2))
+        img = utils.torch2np_color(output[0].detach().numpy())
+        img = utils.adjust_tone(img)
         imageio.imwrite(f"output/epoch8/nn_0{y}_0{x}.png", img)
 
-
     return
+
 
 if __name__ == "__main__":
     main()

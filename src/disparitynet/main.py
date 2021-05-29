@@ -76,8 +76,8 @@ def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
         novelLocation = color[:, -2:, :, :]
 
         output = net(depth, images, novelLocation).cpu()
-        img = utils.torch2np_color(output[0].detach().numpy() ** (1/2.2))
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}.png", img)
+        img = utils.torch2np_color(output[0].detach().numpy())
+        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}.png", utils.adjust_tone(img))
 
 
 def main():
