@@ -21,7 +21,7 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_9_eslf.png"
-        "../datasets/flowers_cropped/flowers_plants_27_eslf.png"
+        "../datasets/flowers_cropped/flowers_plants_9_eslf.png"
     ]
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
@@ -30,7 +30,7 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
 
     net = networks.FullNet(device)
-    net.load_state_dict(torch.load(utils.get_checkpoint_path(6)))
+    net.load_state_dict(torch.load(utils.get_checkpoint_path(28)))
     net = net.to(device)
     net.eval()
 

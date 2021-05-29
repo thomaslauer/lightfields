@@ -59,7 +59,8 @@ class FullNet(nn.Module):
 
         # novelLocation = torch.reshape(
         #     novelLocation, (novelLocation.shape[0], novelLocation.shape[2], novelLocation.shape[3], novelLocation.shape[1]))
-        novelLocation = torch.moveaxis(novelLocation, 1, -1)
+        reshapedNovelLocation = torch.moveaxis(novelLocation, 1, -1)
+        reshapedNovelLocation = reshapedNovelLocation[:, :disparity.shape[1], :disparity.shape[2], :]
 
         warpedImages = []
 
@@ -71,13 +72,16 @@ class FullNet(nn.Module):
             p_i = torch.moveaxis(p_i, 1, -1)
 
             p_i = p_i[:, :disparity.shape[1], :disparity.shape[2], :]
-            novelLocation = novelLocation[:, :disparity.shape[1], :disparity.shape[2], :]
 
-            projectedLocations = grid + (p_i - novelLocation) * dupedDisparity
+            projectedLocations = grid + (p_i - reshapedNovelLocation) * dupedDisparity
             projectedLocations = (projectedLocations - 0.5) * 2
             # print(projectedLocations.shape)
 
-            # plt.imshow(disparity.detach().cpu().numpy()[0])
+            # plt.subplot(1, 2, 1)
+            # plt.imshow(dupedDisparity.detach().cpu().numpy()[0][:,:,0])
+            # plt.colorbar()
+            # plt.subplot(1, 2, 2)
+            # plt.imshow(projectedLocations.detach().cpu().numpy()[0][:,:,0])
             # plt.colorbar()
             # plt.show()
 
@@ -95,6 +99,7 @@ class FullNet(nn.Module):
         # plt.show()
 
         warpedImages.append(x)
+        warpedImages.append(novelLocation)
         stacked = torch.cat(warpedImages, dim=1)
 
         return stacked
@@ -122,7 +127,7 @@ class DisparityNet(nn.Module):
 class ColorNet(nn.Module):
     def __init__(self):
         super(ColorNet, self).__init__()
-        self.conv1 = nn.Conv2d(13,  100, kernel_size=(7,7))
+        self.conv1 = nn.Conv2d(15,  100, kernel_size=(7,7))
         self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5))
         self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3))
         self.conv4 = nn.Conv2d(50,  3,   kernel_size=(1,1))
