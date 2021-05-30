@@ -13,6 +13,8 @@ import imageio
 
 
 def train(net, train_loader, optimizer, device, epoch):
+    # enable cudnn
+    torch.backends.cudnn.benchmark = True
 
     net.train()
 
@@ -66,6 +68,9 @@ def validate(net, validation_loader, device, epoch):
 
 
 def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test"):
+    # disable cudnn
+    torch.backends.cudnn.benchmark = False
+
     utils.mkdirp(out_folder)
     net.eval()
     with torch.no_grad():
@@ -103,8 +108,6 @@ def main():
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    # enable cudnn
-    torch.backends.cudnn.benchmark = True
 
     # lightFieldPaths = [
     #     "../datasets/reflective_17_eslf.png",
