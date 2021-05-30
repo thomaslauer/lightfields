@@ -95,7 +95,7 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
         # TODO: compute loss against target
         loss = torch.sum(F.mse_loss(output, torch.tensor(target)).detach().cpu())
         print(f"Full image loss is {loss:8.7}")
-        img = utils.torch2np_color(output[0].detach().numpy())
+        img = utils.torch2np_color(output.detach().numpy())
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
         disp_min = disp.min()
