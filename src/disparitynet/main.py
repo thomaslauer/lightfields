@@ -65,7 +65,7 @@ def validate(net, validation_loader, device, epoch):
     return loss_sum
 
 
-def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
+def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test"):
     utils.mkdirp(out_folder)
     net.eval()
     with torch.no_grad():
@@ -75,11 +75,11 @@ def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
         images = color[:, :-2, :, :]
         novelLocation = color[:, -2:, :, :]
 
-        disp = net.disparity(depth)
-        warp = net.warp_images(disp, images, novelLocation)
+        disp, warp, output = net(depth, images, novelLocation, return_intermediary=True)
 
-        disp = disp.cpu()[0, 0].numpy()
-        warp = warp.cpu()[0].numpy()[:12]
+        output = output[0].cpu()
+        disp = disp[0, 0].cpu().numpy()
+        warp = warp[0, :12].cpu().numpy()
         _12, r, c = warp.shape
         corners = np.moveaxis(warp.reshape(4, 3, r, c), 1, -1)
 
@@ -87,7 +87,9 @@ def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
             np.hstack((corners[0], corners[1])),
             np.hstack((corners[2], corners[3]))))
 
-        output = net(depth, images, novelLocation).cpu()
+        # TODO: compute loss against target
+        loss = torch.sum(F.mse_loss(output, torch.tensor(target)).detach().cpu())
+        print(f"Full image loss is {loss:8.7}")
         img = utils.torch2np_color(output[0].detach().numpy())
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
@@ -101,6 +103,9 @@ def main():
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
+    # enable cudnn
+    torch.backends.cudnn.benchmark = True
+
     # lightFieldPaths = [
     #     "../datasets/reflective_17_eslf.png",
     #     "../datasets/reflective_18_eslf.png",
@@ -111,10 +116,11 @@ def main():
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
     flower_9 = f'{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png'
 
-    print("Building test data")
     # Fetch test data
-    test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
-    test_depth, test_color = test_data[36]
+    if params.run_test:
+        print("Building test data")
+        test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
+        test_depth, test_color, test_target = test_data[36]
     # clear memory if possible...
     test_data = None
     print("Splitting train/validate")
@@ -142,16 +148,17 @@ def main():
     net = net.to(device)
     # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
     optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
-    if params.start_epoch != 0:
-        test_image(net, test_depth, test_color, device, params.start_epoch - 1, out_folder="./eval_test")
+    if params.start_epoch != 0 and params.run_test:
+        test_image(net, test_depth, test_color, test_target, device, params.start_epoch - 1, out_folder="./eval_test")
 
     for epoch in range(params.start_epoch, params.start_epoch + params.epochs):
         train(net, train_loader, optimizer, device, epoch)
         saveModel(net, epoch)
         loss = validate(net, validate_loader, device, epoch)
         print(f"Validation loss is {loss}")
-        test_image(net, test_depth, test_color, device, epoch, out_folder="./eval_test")
-        print(f"Saved image for epoch {epoch}")
+        if params.run_test:
+            test_image(net, test_depth, test_color, test_target, device, epoch, out_folder="./eval_test")
+            print(f"Saved image for epoch {epoch}")
 
 
 def only_test_image():
@@ -164,7 +171,7 @@ def only_test_image():
     print("Building test data")
     # Fetch test data
     test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
-    test_depth, test_color = test_data[36]
+    test_depth, test_color, test_target = test_data[36]
     net = networks.FullNet(device)
 
     if params.start_epoch != 0:
@@ -176,7 +183,7 @@ def only_test_image():
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
     if params.start_epoch != 0:
-        test_image(net, test_depth, test_color, device, params.start_epoch - 1, out_folder="./eval_test")
+        test_image(net, test_depth, test_color, test_target, device, params.start_epoch - 1, out_folder="./eval_test")
 
 
 if __name__ == "__main__":

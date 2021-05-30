@@ -1,3 +1,4 @@
+from typing import final
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,11 +8,11 @@ import matplotlib.pyplot as plt
 class FullNet(nn.Module):
     def __init__(self, device):
         super(FullNet, self).__init__()
-        self.disparity = DisparityNet()
-        self.color = ColorNet()
+        self.disparity = torch.jit.script(DisparityNet())
+        self.color = torch.jit.script(ColorNet())
         self.device = device
 
-    def forward(self, disparityFeatures, images, novelLocation):
+    def forward(self, disparityFeatures, images, novelLocation, *, return_intermediary=False):
         # bx(200 + 3*4 + 4)x60x60
 
         # disparityFeatures: (batch x 200 x H x W)
@@ -20,14 +21,19 @@ class FullNet(nn.Module):
         # result: RGB x W-12 x H-12
 
         # Run disparity
-        x = self.disparity(disparityFeatures)
+        disparity = self.disparity(disparityFeatures)
         # TODO: Warp images
-        x = self.warp_images(x, images, novelLocation)
+        warps = self.warp_images(disparity, images, novelLocation)
         
         # Compute color from warped images
-        x = self.color(x)
-        return x
+        finalImg = self.color(warps)
 
+        if return_intermediary:
+            return disparity, warps, finalImg
+        else:
+            return finalImg
+
+    @torch.jit.export
     def warp_images(self, x, images, novelLocation):
         """
         params:
@@ -42,8 +48,8 @@ class FullNet(nn.Module):
         # disparity = torch.reshape(x, (dispShape[0], dispShape[2], dispShape[3], dispShape[1]))
         disparity = torch.moveaxis(x, 1, -1)
 
-        us = torch.tensor(np.linspace(0, 1, num=disparity.shape[1]))
-        vs = torch.tensor(np.linspace(0, 1, num=disparity.shape[2]))
+        us = torch.linspace(0, 1, disparity.shape[1])
+        vs = torch.linspace(0, 1, disparity.shape[2])
 
         grid_u, grid_v = torch.meshgrid(us, vs)
         grid_u = grid_u.to(self.device)
@@ -75,9 +81,9 @@ class FullNet(nn.Module):
 
             projectedLocations = grid + (p_i - reshapedNovelLocation) * dupedDisparity
             projectedLocations = (projectedLocations - 0.5) * 2
-            # print(projectedLocations.shape)
+            # print(projectedLocations.requires_grad)
 
-            warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic')
+            warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic', align_corners=False)
             warpedImages.append(warpedImg)
 
             # plt.subplot(2, 2, 1)

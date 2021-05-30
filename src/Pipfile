@@ -12,6 +12,7 @@ scipy = "*"
 imageio = "*"
 pathlib = "*"
 tqdm = "*"
+pyssim = "*"
 
 [dev-packages]
 

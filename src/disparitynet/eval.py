@@ -28,7 +28,7 @@ def main():
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
-    use_cuda = torch.cuda.is_available()
+    use_cuda = torch.cuda.is_available() and False
     device = torch.device("cuda" if use_cuda else "cpu")
 
     net = networks.FullNet(device)
@@ -36,7 +36,7 @@ def main():
     net = net.to(device)
     net.eval()
 
-    for i, (depth, color) in enumerate(tqdm(full_dataset)):
+    for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
         x = i // 8 + 1
         y = i % 8 + 1
         depth = torch.unsqueeze(torch.Tensor(depth), 0).to(device)

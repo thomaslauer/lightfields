@@ -177,7 +177,7 @@ class LytroDataset(Dataset):
                 p,
             )
 
-            return depth, color
+            return depth, color, field[targetX, targetY, :, p*2:-p*2, p*2:-p*2]
 
     def get_color_patch(self, patch, x, y):
         folder, idx = self.patches[patch]

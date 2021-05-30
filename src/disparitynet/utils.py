@@ -81,3 +81,6 @@ def adjust_tone(img):
     out[..., 1] *= 1.5
     out = hsv_to_rgb(out)
     return np.clip(out, 0, 1)
+
+def compute_ssim(computedImg, truthImg):
+    pass
