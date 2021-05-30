@@ -50,7 +50,7 @@ class FullNet(nn.Module):
         grid_v = grid_v.to(self.device)
 
         # build "s" grid of pixel locations to sample
-        grid = torch.stack((grid_u, grid_v), dim=-1)
+        grid = torch.stack((grid_v, grid_u), dim=-1)
         grid = torch.unsqueeze(grid, dim=0)
         grid = grid.repeat(disparity.shape[0], 1, 1, 1)
 
@@ -77,17 +77,16 @@ class FullNet(nn.Module):
             projectedLocations = (projectedLocations - 0.5) * 2
             # print(projectedLocations.shape)
 
-            # plt.subplot(1, 2, 1)
-            # plt.imshow(dupedDisparity.detach().cpu().numpy()[0][:,:,0])
-            # plt.colorbar()
-            # plt.subplot(1, 2, 2)
-            # plt.imshow(projectedLocations.detach().cpu().numpy()[0][:,:,0])
-            # plt.colorbar()
-            # plt.show()
-
-
             warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic')
             warpedImages.append(warpedImg)
+
+            # plt.subplot(2, 2, 1)
+            # plt.imshow(dupedDisparity.detach().cpu().numpy()[0][:,:,0])
+            # plt.subplot(2, 2, 2)
+            # plt.imshow(projectedLocations.detach().cpu().numpy()[0][:,:,0])
+            # plt.subplot(2, 2, 3)
+            # plt.imshow(warpedImg.detach().cpu().numpy()[0][0,:,:])
+            # plt.show()
 
             # plt.imshow(np.moveaxis(warpedImg.detach().cpu().numpy()[0], 0, -1))
             # plt.imshow(p_i.detach().cpu().numpy()[0])

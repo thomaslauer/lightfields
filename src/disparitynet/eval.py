@@ -21,8 +21,10 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_9_eslf.png"
-        "../datasets/flowers_cropped/flowers_plants_9_eslf.png"
+        "../../../datasets/microcropped_images/flowers_plants_9_eslf.png"
     ]
+
+    epochNum = 11
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
@@ -30,7 +32,7 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
 
     net = networks.FullNet(device)
-    net.load_state_dict(torch.load(utils.get_checkpoint_path(28)))
+    net.load_state_dict(torch.load(utils.get_checkpoint_path(epochNum)))
     net = net.to(device)
     net.eval()
 
@@ -51,7 +53,8 @@ def main():
         output = net(depth, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy())
         img = utils.adjust_tone(img)
-        imageio.imwrite(f"output/epoch8/nn_0{y}_0{x}.png", img)
+        utils.mkdirp(f"output/epoch_{epochNum}")
+        imageio.imwrite(f"output/epoch_{epochNum}/nn_0{y}_0{x}.png", img)
 
     return
 
