@@ -25,7 +25,6 @@ Pipeline:
 
 def crop_gray(LF):
     _8, _8, r, c, _3 = LF.shape
-    cropped = np.empty((2,2,r,c,3), dtype=np.float32)
     grayLF = np.array([
         [np.dot(LF[0, 0], [0.299, 0.587, 0.114]), np.dot(LF[0, 7], [0.299, 0.587, 0.114])],
         [np.dot(LF[7, 0], [0.299, 0.587, 0.114]), np.dot(LF[7, 7], [0.299, 0.587, 0.114])]

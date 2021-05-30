@@ -24,11 +24,11 @@ def main():
         "../../../datasets/microcropped_images/flowers_plants_25_eslf.png"
     ]
 
-    epochNum = 36
+    epochNum = 5
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
-    use_cuda = torch.cuda.is_available() and False
+    use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
     net = networks.FullNet(device)
