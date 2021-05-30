@@ -432,10 +432,9 @@ output/
 
 # Checkpoints
 src/naivenet/checkpoints/
-src/disparitynet/checkpoints/
-src/disparitynet/eval_test/
-src/disparitynet/sgd_checkpoints/
-src/disparitynet/sgd_eval_test/
+src/disparitynet/*checkpoints/
+src/disparitynet/*eval_test/
 
 
 *.npy
+

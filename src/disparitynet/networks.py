@@ -33,82 +33,78 @@ class FullNet(nn.Module):
         finalImg = self.color(warps)
         return disparity, warps, finalImg
 
-    @torch.jit.export
-    def warp_images(self, x, images, novelLocation):
+    def warp_images(self, disp, images, novelLocation):
         """
         params:
-            x: the input disparity for the batch            (N, 1, H, W)
+            disp: the input disparity for the batch         (N, 1, H, W)
             img: the light field RGBUV view image           (N, RGBUV, H, W)
             p_i: the input image location                   (N, H, W, 2)
             q: the novel image location                     (N, H, W, 2)
         """
 
-        # rearrange disparity to match the format (N, H, W, 1) format
-        dispShape = x.shape
-        # disparity = torch.reshape(x, (dispShape[0], dispShape[2], dispShape[3], dispShape[1]))
-        disparity = torch.moveaxis(x, 1, -1)
+        # make (N, H, W, 1)
+        disparity = torch.moveaxis(disp, 1, -1)
 
-        us = torch.linspace(0, 1, disparity.shape[1])
-        vs = torch.linspace(0, 1, disparity.shape[2])
+        batches, rows, cols, _1 = disparity.shape
+
+        # duplicate disparity on last axis so it matches p_i and q formats
+        # make (N, H, W, 2)
+        dupedDisparity = disparity.repeat(1, 1, 1, 2)
+
+        # U is down, V is right
+        us = torch.linspace(0, 1, rows, dtype=torch.float32)
+        vs = torch.linspace(0, 1, cols, dtype=torch.float32)
 
         grid_u, grid_v = torch.meshgrid(us, vs)
         grid_u = grid_u.to(self.device)
         grid_v = grid_v.to(self.device)
 
         # build "s" grid of pixel locations to sample
-        grid = torch.stack((grid_v, grid_u), dim=-1)
+        # [N, H, W, UV]
+        grid = torch.stack((grid_u, grid_v), dim=-1)
         grid = torch.unsqueeze(grid, dim=0)
-        grid = grid.repeat(disparity.shape[0], 1, 1, 1)
+        grid = grid.repeat(batches, 1, 1, 1)
 
-        # duplicate disparity on last axis so it matches p_i and q formats
-        dupedDisparity = disparity.repeat(1, 1, 1, 2)
 
         # novelLocation = torch.reshape(
         #     novelLocation, (novelLocation.shape[0], novelLocation.shape[2], novelLocation.shape[3], novelLocation.shape[1]))
         reshapedNovelLocation = torch.moveaxis(novelLocation, 1, -1)
-        reshapedNovelLocation = reshapedNovelLocation[:, :disparity.shape[1], :disparity.shape[2], :]
+        reshapedNovelLocation = reshapedNovelLocation[:, :rows, :cols, :]
+
 
         warpedImages = []
 
         for i in range(4):
-            currentImg = images[:, 5*i:5*i+3, :, :]
-            p_i = images[:, 5*i+3:5*i+5, :, :]
+            off = 5 * i
+            
+            # Get the color data
+            currentImg = images[:, off:off+3, :, :]
+            # Get the u, v coords (N, UV, H, W)
+            p_i = images[:, off+3:off+5, :, :]
 
-            # p_i = torch.reshape(p_i, (p_i.shape[0], p_i.shape[2], p_i.shape[3], p_i.shape[1]))
+            # [N, H, W, UV]
             p_i = torch.moveaxis(p_i, 1, -1)
 
-            p_i = p_i[:, :disparity.shape[1], :disparity.shape[2], :]
+            # ???
+            # p_i = p_i[:, :rows, :cols, :]
 
             projectedLocations = grid + (p_i - reshapedNovelLocation) * dupedDisparity
             projectedLocations = (projectedLocations - 0.5) * 2
             # print(projectedLocations.requires_grad)
 
-            warpedImg = F.grid_sample(currentImg, projectedLocations.float(), mode='bicubic', align_corners=False)
+            # [N, H, W, VU] =~ [N, H, W, XY]
+            # Locations are expected in XY, where X => W, Y => H, so opposite of our UV coords :'(
+            # projectedLocations = projectedLocations[..., -1:0:-1]
+            projectedLocations = torch.flip(projectedLocations, [-1])
+
+            warpedImg = F.grid_sample(currentImg, projectedLocations, mode='bicubic', align_corners=False)
             warpedImages.append(warpedImg)
 
-            # plt.subplot(2, 2, 1)
-            # plt.imshow(dupedDisparity.detach().cpu().numpy()[0][:,:,0])
-            # plt.subplot(2, 2, 2)
-            # plt.imshow(projectedLocations.detach().cpu().numpy()[0][:,:,0])
-            # plt.subplot(2, 2, 3)
-            # plt.imshow(warpedImg.detach().cpu().numpy()[0][0,:,:])
-            # plt.show()
-
-            # plt.imshow(np.moveaxis(warpedImg.detach().cpu().numpy()[0], 0, -1))
-            # plt.imshow(p_i.detach().cpu().numpy()[0])
-            # plt.show()
-
-        # fig, axs = plt.subplots(2, 2)
-        # for ax, img in zip(axs.flatten(), warpedImages):
-        #     ax.imshow(np.moveaxis(img.detach().cpu().numpy()[0], 0, -1))
-        # plt.show()
-
-        warpedImages.append(x)
+        warpedImages.append(disp)
         warpedImages.append(novelLocation)
         stacked = torch.cat(warpedImages, dim=1)
 
         return stacked
-
 
 
 class DisparityNet(nn.Module):
