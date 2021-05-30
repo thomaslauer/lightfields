@@ -78,11 +78,10 @@ class LytroDataset(Dataset):
                 return extract_usable_images(load_image(path))
         self.patches = []
 
-        mkdirp(self.TMP)
-
         coords = np.moveaxis(np.mgrid[0:8, 0:8].reshape((2, -1)), 0, -1)
 
         if training:
+            mkdirp(self.TMP)
             for i, path in enumerate(lightFieldPaths):
                 base = Path(path).stem
 

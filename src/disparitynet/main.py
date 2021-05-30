@@ -75,9 +75,24 @@ def test_image(net, depth, color, device, epoch, out_folder="./eval_test"):
         images = color[:, :-2, :, :]
         novelLocation = color[:, -2:, :, :]
 
+        disp = net.disparity(depth)
+        warp = net.warp_images(disp, images, novelLocation)
+
+        disp = disp.cpu()[0, 0].numpy()
+        warp = warp.cpu()[0].numpy()[:12]
+        _12, r, c = warp.shape
+        corners = np.moveaxis(warp.reshape(4, 3, r, c), 1, -1)
+
+        warped = np.vstack((
+            np.hstack((corners[0], corners[1])),
+            np.hstack((corners[2], corners[3]))))
+
         output = net(depth, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy())
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}.png", utils.adjust_tone(img))
+        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
+        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
+        disp_min = disp.min()
+        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp.max() - disp_min))
 
 
 def main():
@@ -138,5 +153,31 @@ def main():
         print(f"Saved image for epoch {epoch}")
 
 
+def only_test_image():
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    print("Building training data")
+    flower_9 = f'../datasets/people_cropped/people_6_eslf.png'
+
+    print("Building test data")
+    # Fetch test data
+    test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
+    test_depth, test_color = test_data[36]
+    net = networks.FullNet(device)
+
+    if params.start_epoch != 0:
+        # load previous epoch checkpoint
+        net.load_state_dict(torch.load(utils.get_checkpoint_path(
+            params.start_epoch-1), map_location=torch.device(device)))
+
+    # move net to cuda BEFORE setting optimizer variables
+    net = net.to(device)
+    optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    if params.start_epoch != 0:
+        test_image(net, test_depth, test_color, device, params.start_epoch - 1, out_folder="./eval_test")
+
+
 if __name__ == "__main__":
+    # only_test_image()
     main()
