@@ -140,7 +140,8 @@ def main():
 
     # move net to cuda BEFORE setting optimizer variables
     net = net.to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
     if params.start_epoch != 0:
         test_image(net, test_depth, test_color, device, params.start_epoch - 1, out_folder="./eval_test")
 

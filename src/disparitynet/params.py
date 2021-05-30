@@ -1,9 +1,11 @@
-epochs = 50
+epochs = 100
 
-sgd_lr = 0.01
+sgd_lr = 0.005
 sgd_momentum = 0.9
 
-start_epoch = 12
+adam_lr = 0.001
+
+start_epoch = 38
 
 
 drive_path = "/run/media/thomas/lfdata"

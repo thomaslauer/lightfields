@@ -21,10 +21,10 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_9_eslf.png"
-        "../../../datasets/microcropped_images/flowers_plants_9_eslf.png"
+        "../../../datasets/microcropped_images/flowers_plants_25_eslf.png"
     ]
 
-    epochNum = 11
+    epochNum = 36
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
@@ -45,16 +45,16 @@ def main():
         images = color[:, :-2, :, :]
         novelLocation = color[:, -2:, :, :]
 
-        # disp = net.disparity(depth).detach().cpu().numpy()[0]
-        # disp = np.moveaxis(disp, 0, 2)
-        # plt.imshow(disp)
-        # plt.show()
+        disp = net.disparity(depth).cpu()
+        dispImg = utils.torch2np_color(disp[0].detach().numpy())
 
         output = net(depth, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy())
         img = utils.adjust_tone(img)
-        utils.mkdirp(f"output/epoch_{epochNum}")
-        imageio.imwrite(f"output/epoch_{epochNum}/nn_0{y}_0{x}.png", img)
+        utils.mkdirp(f"output/epoch_{epochNum}/color")
+        utils.mkdirp(f"output/epoch_{epochNum}/disp")
+        imageio.imwrite(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", img)
+        imageio.imwrite(f"output/epoch_{epochNum}/disp/nn_0{y}_0{x}.png", dispImg)
 
     return
 
