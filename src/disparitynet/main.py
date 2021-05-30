@@ -80,7 +80,7 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
         images = color[:, :-2, :, :]
         novelLocation = color[:, -2:, :, :]
 
-        disp, warp, output = net(depth, images, novelLocation, return_intermediary=True)
+        disp, warp, output = net.all_steps(depth, images, novelLocation)
 
         output = output[0].cpu()
         disp = disp[0, 0].cpu().numpy()
@@ -99,7 +99,9 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
         disp_min = disp.min()
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp.max() - disp_min))
+        disp_max = disp.max()
+        print(f"Disparity: minmax: [{disp_min}, {disp_max}], std: {np.std(disp)}, mean: {np.mean(disp)}")
+        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp_max - disp_min))
 
 
 def main():
@@ -136,7 +138,7 @@ def main():
     )
 
     batch_size = 64
-    workers = 3
+    workers = 4
 
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)

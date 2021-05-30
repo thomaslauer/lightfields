@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 class FullNet(nn.Module):
     def __init__(self, device):
         super(FullNet, self).__init__()
-        self.disparity = torch.jit.script(DisparityNet())
-        self.color = torch.jit.script(ColorNet())
+        self.disparity = DisparityNet()
+        self.color = ColorNet()
         self.device = device
 
-    def forward(self, disparityFeatures, images, novelLocation, *, return_intermediary=False):
+    def forward(self, disparityFeatures, images, novelLocation):
         # bx(200 + 3*4 + 4)x60x60
 
         # disparityFeatures: (batch x 200 x H x W)
@@ -21,17 +21,17 @@ class FullNet(nn.Module):
         # result: RGB x W-12 x H-12
 
         # Run disparity
+        return self.all_steps(disparityFeatures, images, novelLocation)[2]
+
+    @torch.jit.export
+    def all_steps(self, disparityFeatures, images, novelLocation):
         disparity = self.disparity(disparityFeatures)
         # TODO: Warp images
         warps = self.warp_images(disparity, images, novelLocation)
         
         # Compute color from warped images
         finalImg = self.color(warps)
-
-        if return_intermediary:
-            return disparity, warps, finalImg
-        else:
-            return finalImg
+        return disparity, warps, finalImg
 
     @torch.jit.export
     def warp_images(self, x, images, novelLocation):
