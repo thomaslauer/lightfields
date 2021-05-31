@@ -141,16 +141,16 @@ Our network was implemented using PyTorch, using two separate convolutional netw
 disparity estimation and final color assembly. Our disparity estimation network takes a 
 $200 \times H \times W$ tensor as input, which we calculate using the preprocessing step.
 
-Disparity estimation network
+Here is the architecture of the disparity estimation network.
 
 \begin{center}
 \begin{tabular}{|c c c c|}
-    Layer & Input & Output & Activation \\
+    Input & Output & Kernel Size & Activation \\
     \hline
-    0 & 200 & 100 & ReLU \\
-    1 & 200 & 100 & ReLU \\
-    2 & 100 & 50 & ReLU \\
-    3 & 50 & 1 & None \\
+    200 & 100 & $7 \times 7$ & ReLU \\
+    200 & 100 & $5 \times 5$ & ReLU \\
+    100 & 50 & $3 \times 3$ & ReLU \\
+    50 & 1 & $1 \times 1$ & None \\
 \end{tabular}
 \end{center}
 
@@ -163,20 +163,28 @@ $$
 
 Where $s$ is the pixel location, $p_i$ is the location of the input view, and $q$ is the location of the
 desired novel view. $D_q(s)$ is the estimated disparity at the pixel from the depth estimation network,
-and $L_{p_i}(s)$ is the color of the novel view. 
-
-Color estimation network
+and $L_{p_i}(s)$ is the color of the novel view. These four RGB images, along with the $u$ and $v$ 
+locations of the desired novel view and the disparity estimate from the first network are concatonated
+together into a single 15 channel image. This is used as the input to the color estimation network, which
+has the following architecture:
 
 \begin{center}
 \begin{tabular}{|c c c c|}
-    Layer & Input & Output & Activation \\ 
-    \hline 
-    0 & 15 & 100 & ReLU \\
-    1 & 200 & 100 & ReLU \\
-    2 & 100 & 50 & ReLU \\
-    3 & 50 & 3 & None \\
+    Input & Output & Kernel Size & Activation \\
+    \hline
+    15 & 100 & $7 \times 7$ & ReLU \\
+    200 & 100 & $5 \times 5$ & ReLU \\
+    100 & 50 & $3 \times 3$ & ReLU \\
+    50 & 3 & $1 \times 1$ & None \\
 \end{tabular}
 \end{center}
+
+Because none of the convolutions have padding, the network loses 12 pixels on each edge, reducing
+the $60 \times 60$ patches during training to $36 \times 36$. Padding is not preferred in this situation, 
+because it would make the training patches less representative of the entire image.
+
+
+\subsection{Training}
 
 \section{Questions to be Answered}
 
