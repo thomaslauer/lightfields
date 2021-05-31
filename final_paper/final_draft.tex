@@ -128,7 +128,12 @@ captured by handheld phone cameras, because of the added complexity of different
 
 \subsection{Preprocessing}
 
-Each training lightfield is split into a number of patches. To minim
+Each lightfield is cropped to only use the inner $8 \times 8$ grid of images out of the total $14 \times 14$ available
+since the microlens actually captures a circle of data. For training, we additionally ignore the outer 60 pixels where
+undesirable artifacts sometimes occur and train on $60\times60$ patches with a stride of 24 pixels to ensure overlap.
+Each patch has its depth data estimated for all 64 ground truths and is saved to disk. Across the 68 images from the
+Stanford Lytro dataset by Raj \etal~\cite{StanfordLytro}, we synthesize roughly 600,000 unique patch views total split
+90/10 between training and validation passes.
 
 \subsection{Network}
 
