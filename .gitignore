@@ -438,3 +438,4 @@ src/disparitynet/*eval_test/
 
 *.npy
 *_temp.tex
+tmp/
