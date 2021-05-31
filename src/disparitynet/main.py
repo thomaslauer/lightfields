@@ -18,6 +18,8 @@ def train(net, train_loader, optimizer, device, epoch):
 
     net.train()
 
+    loss_sum = 0
+
     print(f"Training epoch {epoch}")
     for i, (depth, color, target) in enumerate(tqdm(train_loader)):
         optimizer.zero_grad()
@@ -33,12 +35,15 @@ def train(net, train_loader, optimizer, device, epoch):
 
         loss = F.mse_loss(predicted, target)
 
-        if (i + 1) % 500 == 0:
-            # TODO: THOMAS FIX!!!
-            append_loss("loss/ref_image.csv", epoch, i, loss)
 
         loss.backward()
         optimizer.step()
+        loss_sum += torch.sum(loss.cpu()).item()
+
+        if (i + 1) % 500 == 0:
+            # TODO: THOMAS FIX!!!
+            append_loss("loss/loss_train.csv", epoch, i, loss_sum / 500)
+            loss_sum = 0
 
 
 def saveModel(net, epoch):
