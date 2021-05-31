@@ -110,7 +110,6 @@ def main():
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-
     # lightFieldPaths = [
     #     "../datasets/reflective_17_eslf.png",
     #     "../datasets/reflective_18_eslf.png",
@@ -134,7 +133,7 @@ def main():
     validate_size = len(full_dataset) - train_size
 
     train_dataset, validate_dataset = torch.utils.data.random_split(
-        full_dataset, [train_size, validate_size]
+        full_dataset, [train_size, validate_size], generator=torch.Generator().manual_seed(42)
     )
 
     batch_size = 64
