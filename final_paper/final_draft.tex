@@ -183,8 +183,10 @@ Because none of the convolutions have padding, the network loses 12 pixels on ea
 the $60 \times 60$ patches during training to $36 \times 36$. Padding is not preferred in this situation, 
 because it would make the training patches less representative of the entire image.
 
-
 \subsection{Training}
+
+Our loss function is directly using the Mean Squared Error comparing the RGB values of the novel image
+to the RGB values of the input image. 
 
 \section{Questions to be Answered}
 
