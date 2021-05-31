@@ -15,6 +15,8 @@
 % run, let it finish, and you should be clear).
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
+\graphicspath{ {./images/} }
+
 \cvprfinalcopy % *** Uncomment this line for the final submission
 
 \def\cvprPaperID{6969} % *** Enter the CVPR Paper ID here
@@ -215,30 +217,82 @@ These are the structural similarity scores and peak signal to noise ratio scores
 \pagebreak
 
 \begin{center}
-Rocks
+Flowers and Plants 25
 
 \begin{tabular}{|c c c|}
     Network & SSIM & PSNR \\ \hline
-    Ours & 0.841 & 26.41 \\
-    Naive & & \\
-    Reference & 0.969 & 34.66 \\ 
-    Wanner and Goldluecke & 0.488 & 16.57 
+    Ours & 0.898 & 31.48 \\
+    Reference & 0.931 & 33.19 \\ 
 \end{tabular}
 \end{center}
 
 \medspace
 
 \begin{center}
-Flowers and Plants 25
+Rocks
 
 \begin{tabular}{|c c c|}
     Network & SSIM & PSNR \\ \hline
-    Ours & 0.898 & 31.48 \\
-    Naive & & \\
-    Reference & 0.931 & 33.19 \\ 
+    Ours & 0.841 & 26.41 \\
+    Reference & 0.969 & 34.66 \\ 
+    Wanner and Goldluecke & 0.488 & 16.57 
 \end{tabular}
 \end{center}
 
+
+Here is an example from the Stanford Light Field Archive, specifically Flowers and Plants number 25.
+The different crop factors are because Kalantari \etal decided to 
+
+\begin{figure}[h]
+\begin{center}
+\caption{Kalantari \etal Flowers 25}
+\includegraphics[width=8cm]{flowers_25/kalantari_05_05.png}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\caption{Our Flowers 25}
+\includegraphics[width=8cm]{flowers_25/ours_05_05.png}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\caption{Ground Truth Flowers 25}
+\includegraphics[width=8cm]{flowers_25/truth_05_05.png}
+\end{center}
+\end{figure}
+
+
+Here are the results from the rock example Kalantari uses. We used a subset of the Stanford Lytro Archive to train, and are
+going to retrain the network using their light fields that they captured. Our network does need a lot more training time
+at this point, but still performs well compared to other implementations such as Wanner and Goldluecke, even though
+it is seriously under trained. 
+
+\begin{figure}[h]
+\begin{center}
+\caption{Kalantari \etal Rock}
+\includegraphics[width=8cm]{rock/kalantari_05_05.png}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\caption{Our Rock}
+\includegraphics[width=8cm]{rock/ours_05_05.png}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\caption{Ground Truth Rock}
+\includegraphics[width=8cm]{rock/truth_05_05.png}
+\end{center}
+\end{figure}
+
+
+\pagebreak
 
 {\small
 \bibliographystyle{ieee_fullname}
