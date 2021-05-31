@@ -7,11 +7,12 @@ from multiprocessing import Pool
 import utils
 import params
 
-# INPUT = "../../datasets/general/raw/*.png"
+# INPUT = "../../reference_implementation/Scenes/Rock.png"
 # OUTFOLDER = "../datasets/microcropped_images"
 
 INPUT = f"{params.drive_path}/datasets/raw/*.png"
 OUTFOLDER = f"{params.drive_path}/datasets/microcropped_images"
+
 
 def process(img):
     base = pathlib.Path(img).name
@@ -19,6 +20,7 @@ def process(img):
     raw_data = utils.extract_usable_images(utils.load_image(img))
     data = utils.save_extracted(raw_data)
     imageio.imwrite(out_name, data)
+
 
 utils.mkdirp(OUTFOLDER)
 
