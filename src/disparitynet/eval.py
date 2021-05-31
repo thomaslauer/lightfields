@@ -50,11 +50,14 @@ def main():
 
         output = net(depth, images, novelLocation).cpu()
         img = utils.torch2np_color(output[0].detach().numpy())
+        rawImg = img
         img = utils.adjust_tone(img)
         utils.mkdirp(f"output/epoch_{epochNum}/color")
         utils.mkdirp(f"output/epoch_{epochNum}/disp")
+        utils.mkdirp(f"output/epoch_{epochNum}/raw")
         imageio.imwrite(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", img)
         imageio.imwrite(f"output/epoch_{epochNum}/disp/nn_0{y}_0{x}.png", dispImg)
+        imageio.imwrite(f"output/epoch_{epochNum}/raw/nn_0{y}_0{x}.png", rawImg)
 
     return
 
