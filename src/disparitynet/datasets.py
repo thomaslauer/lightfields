@@ -1,14 +1,13 @@
-import imageio
 import numpy as np
-import imageio
 from tqdm import tqdm
 from torch.utils.data import Dataset
 import os
+from time import time
 
 import params
 import preprocess
 import utils
-from utils import load_image, extract_usable_images, load_extracted, mkdirp
+from utils import load_image, extract_usable_images, load_cropped_path, mkdirp
 from pathlib import Path
 
 from concurrent.futures import ProcessPoolExecutor
@@ -73,7 +72,7 @@ class LytroDataset(Dataset):
 
         def readImage(path):
             if cropped:
-                return load_extracted(imageio.imread(path))
+                return load_cropped_path(path)
             else:
                 return extract_usable_images(load_image(path))
         self.patches = []
@@ -158,9 +157,11 @@ class LytroDataset(Dataset):
             return depth, color, target
         else:
             field = self.rawLightFields[patch]
-            grey = preprocess.crop_gray(field)
 
+            startDepth = time()
+            grey = preprocess.crop_gray(field)
             depth = preprocess.prepare_depth_features(grey, u, v)
+            print(f"Depth gen took {time() - startDepth:0.3}s")
 
             field = np.moveaxis(field, -1, 2)
 

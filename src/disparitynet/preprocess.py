@@ -1,9 +1,10 @@
 import numpy as np
-from scipy import ndimage
 import matplotlib.pyplot as plt
 import imageio
 import utils
-from tqdm import tqdm
+import cv2 as cv
+from scipy import ndimage
+from math import floor, ceil
 
 depth_resolution = 100
 delta_disparity = 21
@@ -23,13 +24,35 @@ Pipeline:
 # Takes in a lightfield image of format 8x8xRxCx3
 # u is down, v is right
 
+
 def crop_gray(LF):
     _8, _8, r, c, _3 = LF.shape
-    grayLF = np.array([
-        [np.dot(LF[0, 0], [0.299, 0.587, 0.114]), np.dot(LF[0, 7], [0.299, 0.587, 0.114])],
-        [np.dot(LF[7, 0], [0.299, 0.587, 0.114]), np.dot(LF[7, 7], [0.299, 0.587, 0.114])]
-    ])
+    grayLF = np.empty((2, 2, r, c), dtype=np.float32)
+    cv.cvtColor(LF[0, 0], cv.COLOR_RGB2GRAY, grayLF[0, 0])
+    cv.cvtColor(LF[0, 7], cv.COLOR_RGB2GRAY, grayLF[0, 1])
+    cv.cvtColor(LF[7, 0], cv.COLOR_RGB2GRAY, grayLF[1, 0])
+    cv.cvtColor(LF[7, 7], cv.COLOR_RGB2GRAY, grayLF[1, 1])
     return grayLF
+
+
+def opencv_shift(img, output, u, v):
+    r, c = img.shape
+    mat = np.float32([[1, 0, -v], [0, 1, -u]])
+    cv.warpAffine(img, mat, (c, r), output, cv.INTER_CUBIC, cv.BORDER_REFLECT_101)
+    # NOTE: To correctly match the ndimage impl, we need to use cubic interp with border reflection
+    # however, this causes the background that didn't exist to be filled with values. To fix this
+    # we need to explicitly set those to NaN values. We can't just use border mode constant with nan
+    # value because this causes accidental cropping :'(
+    if u < 0:
+        output[:-floor(u)] = np.nan
+    elif u > 0:
+        output[-ceil(u):] = np.nan
+
+    if v < 0:
+        output[:, :-floor(v)] = np.nan
+    elif v > 0:
+        output[:, -ceil(v):] = np.nan
+
 
 def prepare_depth_features(grayLF, u, v):
     _2, _2, r, c = grayLF.shape
@@ -47,14 +70,14 @@ def prepare_depth_features(grayLF, u, v):
             for iay in [0, 1]:
                 shiftX = cur_depth * x_view[idx]
                 shiftY = cur_depth * y_view[idx]
-                ndimage.shift(grayLF[iax, iay], [-shiftX, -shiftY], output=sheared_LF[idx], cval=np.nan)
+                opencv_shift(grayLF[iax, iay], sheared_LF[idx], shiftX, shiftY)
+                # ndimage.shift(grayLF[iax, iay], [-shiftX, -shiftY], output=sheared_LF[idx], cval=np.nan)
                 idx += 1
 
         if DEBUG:
             fig, axs = plt.subplots(2, 2)
             for x, img in zip(axs.flatten(), sheared_LF):
                 x.imshow(img)
-            plt.show()
 
         features_stack[ind_depth] = defocus_response(sheared_LF)
         features_stack[depth_resolution + ind_depth] = corresp_response(sheared_LF)
@@ -73,9 +96,3 @@ def test(w=200, h=300):
     out = prepare_depth_features(np.random.rand(8, 8, w, h, 3).astype(np.float32), 0.5, 0)
     print(np.count_nonzero(out))
     return out
-
-
-if __name__ == "__main__":
-    # test()
-    prepare_depth_features(crop_gray(utils.load_extracted(imageio.imread(
-        "../datasets/flowers_cropped/flowers_plants_1_eslf.png"))), 1, 1)

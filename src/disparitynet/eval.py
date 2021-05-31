@@ -21,7 +21,7 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
-        # "../datasets/microcropped_images/flowers_plants_25_eslf.png"
+        # "../datasets/microcropped_images/Rock.png"
         f"{params.drive_path}/datasets/microcropped_images/flowers_plants_25_eslf.png"
     ]
 

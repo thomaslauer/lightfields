@@ -2,6 +2,7 @@ import numpy as np
 import imageio
 import pathlib
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+import cv2 as cv
 
 
 def get_checkpoint_path(epoch):
@@ -29,21 +30,20 @@ def extract_usable_images(rawLightField: np.ndarray) -> np.ndarray:
     imgX = rawLightField.shape[0] // 14
     imgY = rawLightField.shape[1] // 14
     shape = (8, 8, imgX, imgY, 3)
-    img = np.empty(shape, dtype=np.float16)
+    img = np.empty(shape, dtype=np.float32)
     offset = 3
     for r in range(8):
         for c in range(8):
             imgR = r + offset
             imgC = c + offset
-            # moveaxis to make color the first index
             img[r, c, ...] = rawLightField[imgR::14, imgC::14, :3]
     return img
 
 
 def load_image(path):
-    img = imageio.imread(path)
+    img = cv.imread(path, cv.IMREAD_COLOR | cv.IMREAD_ANYDEPTH)
     bitdepth = 16 if img.dtype == np.uint16 else 8
-    return img.astype(np.float32) / (2 ** bitdepth - 1)
+    return cv.cvtColor(np.divide(img, (2 ** bitdepth - 1), dtype=np.float32), cv.COLOR_BGR2RGB)
 
 
 def torch2np_color(img: np.ndarray) -> np.ndarray:
@@ -60,9 +60,10 @@ def mkdirp(directory):
     pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
 
 
-def load_extracted(data):
-    h, w, c = data.shape
-    return np.array(data.reshape((8, 8, h // 64, w, 3))).astype(np.float32) / 255
+def load_cropped_path(path):
+    data = cv.cvtColor(cv.imread(path, cv.IMREAD_COLOR), cv.COLOR_BGR2RGB)
+    h, w, _3 = data.shape
+    return np.divide(data, 255., dtype=np.float32).reshape(8, 8, h // 64, w, 3)
 
 
 def save_extracted(data):
@@ -81,6 +82,3 @@ def adjust_tone(img):
     out[..., 1] *= 1.5
     out = hsv_to_rgb(out)
     return np.clip(out, 0, 1)
-
-def compute_ssim(computedImg, truthImg):
-    pass
