@@ -13,6 +13,8 @@ import utils
 
 def train(net, train_loader, optimizer, device, epoch):
 
+    # enable cudnn
+    torch.backends.cudnn.benchmark = True
     net.train()
 
     print(f"Training epoch {epoch}")
@@ -33,10 +35,12 @@ def saveModel(net, epoch):
 
 def validate(net, validation_loader, device, epoch):
 
-    loss_sum = 0
+    # enable cudnn
+    torch.backends.cudnn.benchmark = True
 
     net.eval()
 
+    loss_sum = 0
     with torch.no_grad():
         for batch_data, target in tqdm(validation_loader):
             batch_data = batch_data.to(device)
@@ -93,6 +97,7 @@ def main():
     # move net to cuda BEFORE setting optimizer variables
     net = net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    # optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
 
     for epoch in range(params.start_epoch, params.start_epoch + params.epochs):
         train(net, train_loader, optimizer, device, epoch)
