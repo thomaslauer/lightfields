@@ -201,24 +201,15 @@ We used the ADAM optimizer with a learning rate of $1e-3$, $\beta_1 = 0.9$, $\be
 is 64 $60 \times 60$ patches. Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
 individual pixels to train on. This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained on.
 Our implementation is also significantly faster than theirs, it took their network 12.3 seconds to generate a novel viewpoint
-whereas ours takes 6.2 seconds. However we believe this is mostly because of improvements in hardware from 2016, and has little to do with the
+whereas ours takes 6.2 seconds. We believe this is mostly because of improvements in hardware from 2016, and has little to do with the
 actual algorithms.
 
+\section{Results}
 
+Because of the much larger datset, we have currently trained for 17 epochs. We are currently training up to 100 epochs, but we 
+wanted to be sure we had some metrics for this preliminary report. For this reason, we expect that our results will perform worse
+than our final versions. 
 
-\section{Questions to be Answered}
-
-How does the disparity from the first CNN compare to disparity produced 
-by traditional computer vision methods, such as OpenCV?
-
-Will the approach outlined work when we select sampled images from different locations, instead 
-of the corners of the sub-aperture views? Further, is the CNN learning in this fixed grid transferrable
-to other grid layouts?
-
-Will this work if we try to reconstruct a novel view outside the bounds of the sampled sub-aperture views?
-
-If learning in non-transferrable across capture grid aspect ratios, is it possible to solve this with
-image stretching?
 
 {\small
 \bibliographystyle{ieee_fullname}
