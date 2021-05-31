@@ -19,7 +19,7 @@ def train(net, train_loader, optimizer, device, epoch):
     net.train()
 
     print(f"Training epoch {epoch}")
-    for depth, color, target in tqdm(train_loader):
+    for i, (depth, color, target) in enumerate(tqdm(train_loader)):
         optimizer.zero_grad()
 
         depth = depth.to(device)
@@ -32,6 +32,11 @@ def train(net, train_loader, optimizer, device, epoch):
         predicted = net(depth, images, novelLocation)
 
         loss = F.mse_loss(predicted, target)
+
+        if (i + 1) % 500 == 0:
+            # TODO: THOMAS FIX!!!
+            append_loss("loss/ref_image.csv", epoch, i, loss)
+
         loss.backward()
         optimizer.step()
 
@@ -39,6 +44,11 @@ def train(net, train_loader, optimizer, device, epoch):
 def saveModel(net, epoch):
     utils.mkdirp("./checkpoints")
     torch.save(net.state_dict(), utils.get_checkpoint_path(epoch))
+
+
+def append_loss(file, epoch, batch, loss):
+    with open(file, "a") as myfile:
+        myfile.write(f"{epoch},{batch},{loss}\n")
 
 
 def validate(net, validation_loader, device, epoch):
@@ -63,6 +73,7 @@ def validate(net, validation_loader, device, epoch):
             loss_sum += torch.sum(loss.cpu())
 
         # TODO: add other eval functions here
+    append_loss("loss/validation.csv", epoch, 0, loss_sum)
 
     return loss_sum
 
@@ -94,6 +105,8 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
 
         # TODO: compute loss against target
         loss = torch.sum(F.mse_loss(output, torch.tensor(target)).detach().cpu())
+        append_loss("loss/ref_image.csv", epoch, 0, loss)
+
         print(f"Full image loss is {loss:8.7}")
         img = utils.torch2np_color(output.detach().numpy())
         imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
@@ -105,6 +118,7 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
 
 
 def main():
+    utils.mkdirp("loss")
 
     # determine whether to use cuda or cpu
     use_cuda = torch.cuda.is_available()
