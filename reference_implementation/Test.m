@@ -16,7 +16,7 @@ InitParam();
 
 %% Generate novel views for each scene
 
-[sceneNames, scenePaths, numScenes] = GetFolderContent(sceneFolder);
+[sceneNames, scenePaths, numScenes] = GetFolderContent(sceneFolder, 'png');
 
 for ns = 1 : numScenes
     fprintf('**********************************\n');
@@ -24,6 +24,7 @@ for ns = 1 : numScenes
     
     resultPath = [resultFolder, '/', sceneNames{ns}(1:end-4)];
     MakeDir([resultPath, '/Images']);
+    MakeDir([resultPath, '/RawImages']);
     
     fprintf('Loading input light field ...');
     [curFullLF, curInputLF] = ReadIllumImages(scenePaths{ns});

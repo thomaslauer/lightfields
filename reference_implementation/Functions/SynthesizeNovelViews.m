@@ -34,6 +34,7 @@ for vi = 1 : numNovelViews
     end
     
     curEst = gather(curEst);
+    imwrite(curEst, [resultPath, '/RawImages/', sprintf('%02d_%02d.png', indY, indX)]);
     imwrite(AdjustTone(curEst), [resultPath, '/Images/', sprintf('%02d_%02d.png', indY, indX)]);
     %%% --------------------------------------------------
     

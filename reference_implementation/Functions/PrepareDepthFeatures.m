@@ -44,7 +44,7 @@ for curDepth = - deltaDisparity : delta : deltaDisparity
         end
     end
     
-    imshow(shearedLF(:,:,4))
+    % imshow(shearedLF(:,:,4))
     
     %%% computing the final mean and variance features for each depth level
     %%% using Eq. 6 
