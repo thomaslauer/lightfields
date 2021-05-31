@@ -5,7 +5,7 @@ import pathlib
 from tqdm import tqdm
 import utils
 
-INPUT = "../datasets/flowers_plants/raw/*.png"
+INPUT = "../../../datasets/raw/flowers_plants_25_eslf.png"
 OUTFOLDER = "../datasets/flowers_cropped"
 
 utils.mkdirp(OUTFOLDER)
