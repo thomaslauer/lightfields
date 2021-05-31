@@ -119,12 +119,12 @@ def main():
     print("Building training data")
     lightFieldPaths = glob.glob(f'{params.drive_path}/datasets/microcropped_images/*.png')
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=True, cropped=True)
-    flower_9 = f'{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png'
+    test_lightfield = f'{params.drive_path}/datasets/microcropped_images/flowers_plants_25_eslf.png'
 
     # Fetch test data
     if params.run_test:
         print("Building test data")
-        test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
+        test_data = datasets.LytroDataset([test_lightfield], training=False, cropped=True)
         test_depth, test_color, test_target = test_data[36]
     # clear memory if possible...
     test_data = None
