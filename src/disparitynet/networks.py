@@ -49,11 +49,17 @@ class FullNet(nn.Module):
 
         # duplicate disparity on last axis so it matches p_i and q formats
         # make (N, H, W, 2)
-        dupedDisparity = disparity.repeat(1, 1, 1, 2)
+        # Note: due to a really big dumb dumb, we forgot to scale the u/v coords of the meshgrid
+        # to be in the range [0, D) so the disparity was actually trained to be in the wrong range
+        # and would only work correctly for 60x60 source -> 48x48, so all the disparity values were off by a scale of 47.
+        # to fix it, we add the scale to the disparity here, and then that cancels out the grid scale normalization.
+        dupedDisparity = disparity.repeat(1, 1, 1, 2) * 47
+
+        # (grid + disp * const) / [rows - 1, cols - 1]
 
         # U is down, V is right
-        us = torch.linspace(0, 1, rows, dtype=torch.float32)
-        vs = torch.linspace(0, 1, cols, dtype=torch.float32)
+        us = torch.linspace(0, rows-1, rows, dtype=torch.float32)
+        vs = torch.linspace(0, cols-1, cols, dtype=torch.float32)
 
         grid_u, grid_v = torch.meshgrid(us, vs)
         grid_u = grid_u.to(self.device)
@@ -69,9 +75,8 @@ class FullNet(nn.Module):
         # novelLocation = torch.reshape(
         #     novelLocation, (novelLocation.shape[0], novelLocation.shape[2], novelLocation.shape[3], novelLocation.shape[1]))
         reshapedNovelLocation = torch.moveaxis(novelLocation, 1, -1)
-        reshapedNovelLocation = reshapedNovelLocation[:, :rows, :cols, :]
-
-
+        # reshapedNovelLocation = reshapedNovelLocation[:, :rows, :cols, :]
+        
         warpedImages = []
 
         for i in range(4):
@@ -89,6 +94,7 @@ class FullNet(nn.Module):
             # p_i = p_i[:, :rows, :cols, :]
 
             projectedLocations = grid + (p_i - reshapedNovelLocation) * dupedDisparity
+            projectedLocations = projectedLocations / torch.tensor([[[[rows-1, cols-1]]]], device=self.device)
             projectedLocations = (projectedLocations - 0.5) * 2
             # print(projectedLocations.requires_grad)
 

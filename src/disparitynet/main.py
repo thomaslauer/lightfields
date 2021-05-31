@@ -138,7 +138,7 @@ def main():
     )
 
     batch_size = 64
-    workers = 4
+    workers = 3
 
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)

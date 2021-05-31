@@ -5,7 +5,7 @@ sgd_momentum = 0.9
 
 adam_lr = 0.001
 
-start_epoch = 1
+start_epoch = 14
 run_test = True
 DEBUG = False
 
