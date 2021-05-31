@@ -95,7 +95,7 @@ The second network then takes these warped images, along with some additional me
 to produce the final RGB image of the novel view. Keeping this process differentiable allows both CNNs to 
 be trained at the same time, which lets the disparity estimator become tuned to work with the final CNN.
 
-\section{Our Proposal}
+\subsection{Our Proposal}
 
 Our goal is to reimplement the paper \textit{Learning-Based View Synthesis for Light Field Cameras} by 
 Kalantari \etal~\cite{LearningViewSynthesis} and additionally try to apply this technique to non-Lytro camera
@@ -116,15 +116,14 @@ help visualize the results.
 
 \section{Datasets}
 
-Our training datasets will be Lytro captures since it represents a standardized input format which is
-widely available, for example from Stanford at http://lightfields.stanford.edu/LF2016.html.
-Because Lytro images are consistently formatted, we should be able to easily test our code with many different
-light fields. We also want to test this approach with a camera array, and we could easily adapt our preprocessing
-to accept the Stanford Multi-Camera Array. We will not be considering more free form light fields, such as those
-captured by handheld phone cameras, because of the added complexity of different camera orientations.
+We train our model using using Lytro captures since they represent a regularized input format with
+online datasets easily available. In this paper, we make use of the Standford Lytro dataset by Raj \etal~\cite{StanfordLytro}
+In addition to the ease of availability, these datasets also provide a 
 
 \section{Implementation Details}
 
+Our implementation closely follows that of Kalantari \etal~\cite{LearningViewSynthesis} with several modifications such
+as being based on PyTorch \cite{PyTorch}.
 
 \subsection{Preprocessing}
 
@@ -148,7 +147,7 @@ Here is the architecture of the disparity estimation network.
     Input & Output & Kernel Size & Activation \\
     \hline
     200 & 100 & $7 \times 7$ & ReLU \\
-    200 & 100 & $5 \times 5$ & ReLU \\
+    100 & 100 & $5 \times 5$ & ReLU \\
     100 & 50 & $3 \times 3$ & ReLU \\
     50 & 1 & $1 \times 1$ & None \\
 \end{tabular}
@@ -173,7 +172,7 @@ has the following architecture:
     Input & Output & Kernel Size & Activation \\
     \hline
     15 & 100 & $7 \times 7$ & ReLU \\
-    200 & 100 & $5 \times 5$ & ReLU \\
+    100 & 100 & $5 \times 5$ & ReLU \\
     100 & 50 & $3 \times 3$ & ReLU \\
     50 & 3 & $1 \times 1$ & None \\
 \end{tabular}

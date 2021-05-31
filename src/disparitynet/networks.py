@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class FullNet(nn.Module):
     def __init__(self, device):
         super(FullNet, self).__init__()
@@ -28,7 +29,7 @@ class FullNet(nn.Module):
         disparity = self.disparity(disparityFeatures)
         # TODO: Warp images
         warps = self.warp_images(disparity, images, novelLocation)
-        
+
         # Compute color from warped images
         finalImg = self.color(warps)
         return disparity, warps, finalImg
@@ -71,17 +72,16 @@ class FullNet(nn.Module):
         grid = torch.unsqueeze(grid, dim=0)
         grid = grid.repeat(batches, 1, 1, 1)
 
-
         # novelLocation = torch.reshape(
         #     novelLocation, (novelLocation.shape[0], novelLocation.shape[2], novelLocation.shape[3], novelLocation.shape[1]))
         reshapedNovelLocation = torch.moveaxis(novelLocation, 1, -1)
         # reshapedNovelLocation = reshapedNovelLocation[:, :rows, :cols, :]
-        
+
         warpedImages = []
 
         for i in range(4):
             off = 5 * i
-            
+
             # Get the color data
             currentImg = images[:, off:off+3, :, :]
             # Get the u, v coords (N, UV, H, W)
@@ -117,10 +117,10 @@ class DisparityNet(nn.Module):
 
     def __init__(self):
         super(DisparityNet, self).__init__()
-        self.conv1 = nn.Conv2d(200,  100, kernel_size=(7,7))
-        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5))
-        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3))
-        self.conv4 = nn.Conv2d(50,  1,   kernel_size=(1,1))
+        self.conv1 = nn.Conv2d(200,  100, kernel_size=(7, 7))
+        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5, 5))
+        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3, 3))
+        self.conv4 = nn.Conv2d(50,  1,   kernel_size=(1, 1))
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -130,14 +130,13 @@ class DisparityNet(nn.Module):
         return x
 
 
-
 class ColorNet(nn.Module):
     def __init__(self):
         super(ColorNet, self).__init__()
-        self.conv1 = nn.Conv2d(15,  100, kernel_size=(7,7))
-        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5,5))
-        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3,3))
-        self.conv4 = nn.Conv2d(50,  3,   kernel_size=(1,1))
+        self.conv1 = nn.Conv2d(15,  100, kernel_size=(7, 7))
+        self.conv2 = nn.Conv2d(100, 100, kernel_size=(5, 5))
+        self.conv3 = nn.Conv2d(100, 50,  kernel_size=(3, 3))
+        self.conv4 = nn.Conv2d(50,  3,   kernel_size=(1, 1))
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
