@@ -21,11 +21,11 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
-        # "../datasets/microcropped_images/Rock.png"
-        f"{params.drive_path}/datasets/microcropped_images/flowers_plants_25_eslf.png"
+        # "../datasets/microcropped_images/flowers_plants_25_eslf.png"
+        f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
     ]
 
-    epochNum = 36
+    epochNum = 4
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
@@ -37,7 +37,7 @@ def main():
     net = net.to(device)
     net.eval()
 
-    for i, (depth, color, _target) in enumerate(tqdm([full_dataset[36]])):
+    for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
         x = i // 8 + 1
         y = i % 8 + 1
         depth = torch.unsqueeze(torch.Tensor(depth), 0).to(device)
