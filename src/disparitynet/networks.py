@@ -54,7 +54,8 @@ class FullNet(nn.Module):
         # to be in the range [0, D) so the disparity was actually trained to be in the wrong range
         # and would only work correctly for 60x60 source -> 48x48, so all the disparity values were off by a scale of 47.
         # to fix it, we add the scale to the disparity here, and then that cancels out the grid scale normalization.
-        dupedDisparity = disparity.repeat(1, 1, 1, 2) * 47
+        # NOTE: followup fixed and retrained
+        dupedDisparity = disparity.repeat(1, 1, 1, 2)
 
         # (grid + disp * const) / [rows - 1, cols - 1]
 
