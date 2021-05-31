@@ -4,8 +4,8 @@ import pathlib
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
 
-def get_checkpoint_path(epoch):
-    return f"checkpoints/checkpoint_{epoch}.pth"
+def get_checkpoint_path(epoch, type="model"):
+    return f"checkpoints/checkpoint_{epoch}_{type}.pth"
 
 
 def get_idx_folder(folder, idx):

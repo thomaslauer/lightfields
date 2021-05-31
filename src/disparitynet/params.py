@@ -3,9 +3,9 @@ epochs = 100
 sgd_lr = 0.005
 sgd_momentum = 0.9
 
-adam_lr = 0.001
+adam_lr = 0.0001
 
-start_epoch = 0
+start_epoch = 5
 run_test = True
 DEBUG = False
 

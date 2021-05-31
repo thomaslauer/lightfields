@@ -46,9 +46,10 @@ def train(net, train_loader, optimizer, device, epoch):
             loss_sum = 0
 
 
-def saveModel(net, epoch):
+def saveModel(net, optimizer, epoch):
     utils.mkdirp("./checkpoints")
-    torch.save(net.state_dict(), utils.get_checkpoint_path(epoch))
+    torch.save(net.state_dict(), utils.get_checkpoint_path(epoch, "model"))
+    torch.save(optimizer.state_dict(), utils.get_checkpoint_path(epoch, "optim"))
 
 
 def append_loss(file, epoch, batch, loss):
@@ -119,7 +120,8 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
         disp_min = disp.min()
         disp_max = disp.max()
         print(f"Disparity: minmax: [{disp_min}, {disp_max}], std: {np.std(disp)}, mean: {np.mean(disp)}")
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp_max - disp_min))
+        if disp_min != disp_max:
+            imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp_max - disp_min))
 
 
 def main():
@@ -162,21 +164,23 @@ def main():
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
 
     net = networks.FullNet(device)
+    # move net to cuda BEFORE setting optimizer variables
+    net = net.to(device)
+
+    # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
 
     if params.start_epoch != 0:
         # load previous epoch checkpoint
-        net.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1)))
+        net.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "model")))
+        optimizer.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "optim")))
 
-    # move net to cuda BEFORE setting optimizer variables
-    net = net.to(device)
-    # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
-    optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
     if params.start_epoch != 0 and params.run_test:
         test_image(net, test_depth, test_color, test_target, device, params.start_epoch - 1, out_folder="./eval_test")
 
     for epoch in range(params.start_epoch, params.start_epoch + params.epochs):
         train(net, train_loader, optimizer, device, epoch)
-        saveModel(net, epoch)
+        saveModel(net, optimizer, epoch)
         loss = validate(net, validate_loader, device, epoch)
         print(f"Validation loss is {loss}")
         if params.run_test:
