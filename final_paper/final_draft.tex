@@ -136,8 +136,42 @@ Our network was implemented using PyTorch, using two separate convolutional netw
 disparity estimation and final color assembly. Our disparity estimation network takes a 
 $200 \times H \times W$ tensor as input, which we calculate using the preprocessing step.
 
+Disparity estimation network
+
+\begin{center}
 \begin{tabular}{|c c c c|}
+    Layer & Input & Output & Activation \\
+    \hline
+    0 & 200 & 100 & ReLU \\
+    1 & 200 & 100 & ReLU \\
+    2 & 100 & 50 & ReLU \\
+    3 & 50 & 1 & None \\
 \end{tabular}
+\end{center}
+
+
+This disparity is then used to warp the 4 input views:
+
+$$
+\overline{L}_{p_i} = L_{p_i} \left[ s + \left(p_i - q\right) D_q(s) \right]
+$$
+
+Where $s$ is the pixel location, $p_i$ is the location of the input view, and $q$ is the location of the
+desired novel view. $D_q(s)$ is the estimated disparity at the pixel from the depth estimation network,
+and $L_{p_i}(s)$ is the color of the novel view. 
+
+Color estimation network
+
+\begin{center}
+\begin{tabular}{|c c c c|}
+    Layer & Input & Output & Activation \\ 
+    \hline 
+    0 & 15 & 100 & ReLU \\
+    1 & 200 & 100 & ReLU \\
+    2 & 100 & 50 & ReLU \\
+    3 & 50 & 3 & None \\
+\end{tabular}
+\end{center}
 
 \section{Questions to be Answered}
 
