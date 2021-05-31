@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{mathrsfs}
 
 % Include other packages here, before hyperref.
 
@@ -106,10 +107,11 @@ same metrics used by the original paper.
 
 \section{Technology}
 
-We intend to implement this using PyTorch, because it has high performance, 
+We implemented this using PyTorch, because it has high performance, 
 automatically handles calculating derivatives, and we have previous experience with it.
-Additionally, we will likely be using OpenCV or something similar for feature extraction
-in the preprocessing stage.
+In addition, we used NumPy to compute the preprocessing and feature extraction of the input lightfields,
+and SciPy for the image quality metrics.
+
 We are not expecting to get real time performance, the paper claims it took 12.3 seconds to synthesize
 a single image using a Matlab implementation. We will stitch the individual images into a video to
 help visualize the results.
@@ -154,7 +156,7 @@ Here is the architecture of the disparity estimation network.
 \end{center}
 
 
-This disparity is then used to warp the 4 input views:
+This disparity is then used to warp the 4 input views using the following equation:
 
 $$
 \overline{L}_{p_i} = L_{p_i} \left[ s + \left(p_i - q\right) D_q(s) \right]
@@ -162,9 +164,14 @@ $$
 
 Where $s$ is the pixel location, $p_i$ is the location of the input view, and $q$ is the location of the
 desired novel view. $D_q(s)$ is the estimated disparity at the pixel from the depth estimation network,
-and $L_{p_i}(s)$ is the color of the novel view. These four RGB images, along with the $u$ and $v$ 
+and $L_{p_i}(s)$ is the color of the novel view. We use the grid\_sample function from PyTorch, which integrates
+with autograd to allow backpropegating the weights through $L_{p_i}(s)$. $s$, $p_i$, and $q$ are all 
+constant precalculated inputs, but autograd is able to compute the derivative 
+$\frac{\partial \overline{L}_{p_i}}{\partial D_q}$ automatically. 
+
+These four RGB images, along with the $u$ and $v$ 
 locations of the desired novel view and the disparity estimate from the first network are concatonated
-together into a single 15 channel image. This is used as the input to the color estimation network, which
+together into a single 15 channel image. Kalantari \etal name this image $H$. This is used as the input to the color estimation network, which
 has the following architecture:
 
 \begin{center}
@@ -179,13 +186,25 @@ has the following architecture:
 \end{center}
 
 Because none of the convolutions have padding, the network loses 12 pixels on each edge, reducing
-the $60 \times 60$ patches during training to $36 \times 36$. Padding is not preferred in this situation, 
+the $60 \times 60$ patches during training to $36 \times 36$. Training without padding is ideal in this situation, 
 because it would make the training patches less representative of the entire image.
 
 \subsection{Training}
 
-Our loss function is directly using the Mean Squared Error comparing the RGB values of the novel image
-to the RGB values of the input image. 
+Our loss function is directly the $\mathcal{L}_2$ distance between the channel wise RGB values of the novel image
+and the ground truth image. While Kalantari \etal needed to numerically calculate the gradient of the interpolation
+step which warps the ground truth images to the novel viewpoint, PyTorch's autograd is able to handle this automatically.
+We needed to be careful to not destroy the gradient chain while calculating $s + \left(p_i - q\right) D_q(s)$, which had
+to be done manually outside of a PyTorch function, because of the way autograd builds the sequence of operations to backpropegate on.
+
+We used the ADAM optimizer with a learning rate of $1e-3$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, and $eps = 1e-8$. Our batch size 
+is 64 $60 \times 60$ patches. Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
+individual pixels to train on. This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained on.
+Our implementation is also significantly faster than theirs, it took their network 12.3 seconds to generate a novel viewpoint
+whereas ours takes 6.2 seconds. However we believe this is mostly because of improvements in hardware from 2016, and has little to do with the
+actual algorithms.
+
+
 
 \section{Questions to be Answered}
 
