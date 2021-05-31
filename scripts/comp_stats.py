@@ -5,6 +5,7 @@ from skimage.metrics import structural_similarity, peak_signal_noise_ratio
 import numpy as np
 import sys
 
+
 # image to extract in range [0, 7]. Will be X -> Right, Y -> Down
 coords = (4, 4)
 
@@ -13,14 +14,16 @@ source, *raws = sys.argv[1:]
 startR = coords[1] + 3
 startC = coords[0] + 3
 
-p = 12 + 10
+p = 12
 
 truth = imageio.imread(source)[startR::14, startC::14, :3][p:-p, p:-p]
 r, c, _3 = truth.shape
 
 for rawPath in raws:
-    raw = imageio.imread(rawPath)
+    raw = imageio.imread(rawPath)  # [:-1]
     R, C, _3 = raw.shape
+
+    print(raw.shape, truth.shape)
 
     if R - r == 20 and C - c == 20:
         print("cropping our image")
