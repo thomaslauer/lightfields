@@ -78,6 +78,7 @@ def prepare_depth_features(grayLF, u, v):
             fig, axs = plt.subplots(2, 2)
             for x, img in zip(axs.flatten(), sheared_LF):
                 x.imshow(img)
+            plt.show()
 
         features_stack[ind_depth] = defocus_response(sheared_LF)
         features_stack[depth_resolution + ind_depth] = corresp_response(sheared_LF)

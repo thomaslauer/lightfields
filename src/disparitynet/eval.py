@@ -94,5 +94,5 @@ def main():
 
 
 if __name__ == "__main__":
-    novel_view()
+    # novel_view()
     main()
