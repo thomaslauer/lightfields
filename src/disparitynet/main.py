@@ -9,7 +9,6 @@ import datasets
 import networks
 import params
 import utils
-import imageio
 
 
 def train(net, train_loader, optimizer, device, epoch):
@@ -34,7 +33,6 @@ def train(net, train_loader, optimizer, device, epoch):
         predicted = net(depth, images, novelLocation)
 
         loss = F.mse_loss(predicted, target)
-
 
         loss.backward()
         optimizer.step()
@@ -115,13 +113,13 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
 
         print(f"Full image loss is {loss:8.7}")
         img = utils.torch2np_color(output.detach().numpy())
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
-        imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
+        utils.save_image(f"{out_folder}/epoch_{epoch:03}_result.png", utils.adjust_tone(img))
+        utils.save_image(f"{out_folder}/epoch_{epoch:03}_warped.png", utils.adjust_tone(warped))
         disp_min = disp.min()
         disp_max = disp.max()
         print(f"Disparity: minmax: [{disp_min}, {disp_max}], std: {np.std(disp)}, mean: {np.mean(disp)}")
         if disp_min != disp_max:
-            imageio.imwrite(f"{out_folder}/epoch_{epoch:03}_disparity.png", (disp - disp_min) / (disp_max - disp_min))
+            utils.save_disparity(f"{out_folder}/epoch_{epoch:03}_disparity.png", disp)
 
 
 def main():

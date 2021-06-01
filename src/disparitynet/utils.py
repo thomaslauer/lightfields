@@ -82,3 +82,13 @@ def adjust_tone(img):
     out[..., 1] *= 1.5
     out = hsv_to_rgb(out)
     return np.clip(out, 0, 1)
+
+
+def save_disparity(name, disparity):
+    save_image(name, disparity, (np.min(disparity), np.max(disparity)))
+
+
+def save_image(name, img, minmax=(0, 1)):
+    """Takes an image on the scale"""
+    clipped = (np.clip(img, minmax[0], minmax[1]) - minmax[0]) * (255 / (minmax[1] - minmax[0]))
+    imageio.imwrite(name, clipped.astype(np.uint8))

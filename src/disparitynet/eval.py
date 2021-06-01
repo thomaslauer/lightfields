@@ -1,10 +1,6 @@
-import argparse
 import torch
 import numpy as np
-from torch.utils.data import DataLoader
-import imageio
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 import datasets
 import networks
@@ -59,9 +55,10 @@ def main():
         utils.mkdirp(f"output/epoch_{epochNum}/color")
         utils.mkdirp(f"output/epoch_{epochNum}/disp")
         utils.mkdirp(f"output/epoch_{epochNum}/raw")
-        imageio.imwrite(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", np.clip(img * 255, 0, 255).astype(np.uint8))
-        imageio.imwrite(f"output/epoch_{epochNum}/disp/nn_0{y}_0{x}.png", dispImg)
-        imageio.imwrite(f"output/epoch_{epochNum}/raw/nn_0{y}_0{x}.png", np.clip(rawImg * 255, 0, 255).astype(np.uint8))
+
+        utils.save_image(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", img)
+        utils.save_disparity(f"output/epoch_{epochNum}/disp/nn_0{y}_0{x}.png", dispImg)
+        utils.save_image(f"output/epoch_{epochNum}/raw/nn_0{y}_0{x}.png", rawImg)
 
     return
 
