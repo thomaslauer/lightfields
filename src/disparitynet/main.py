@@ -11,7 +11,7 @@ import params
 import utils
 
 
-def train(net, train_loader, optimizer, device, epoch):
+def train(net: networks.FullNet, train_loader, optimizer, device, epoch):
     # enable cudnn
     torch.backends.cudnn.benchmark = True
 
@@ -27,10 +27,7 @@ def train(net, train_loader, optimizer, device, epoch):
         color = color.to(device)
         target = target.to(device)
 
-        images = color[:, :-2, :, :]
-        novelLocation = color[:, -2:, :, :]
-
-        predicted = net(depth, images, novelLocation)
+        predicted = net(depth, color)
 
         loss = F.mse_loss(predicted, target)
 
@@ -39,12 +36,11 @@ def train(net, train_loader, optimizer, device, epoch):
         loss_sum += torch.sum(loss.cpu()).item()
 
         if (i + 1) % 500 == 0:
-            # TODO: THOMAS FIX!!!
             append_loss("loss/loss_train.csv", epoch, i, loss_sum / 500)
             loss_sum = 0
 
 
-def saveModel(net, optimizer, epoch):
+def saveModel(net: networks.FullNet, optimizer, epoch):
     utils.mkdirp("./checkpoints")
     torch.save(net.state_dict(), utils.get_checkpoint_path(epoch, "model"))
     torch.save(optimizer.state_dict(), utils.get_checkpoint_path(epoch, "optim"))
@@ -55,7 +51,7 @@ def append_loss(file, epoch, batch, loss):
         myfile.write(f"{epoch},{batch},{loss}\n")
 
 
-def validate(net, validation_loader, device, epoch):
+def validate(net: networks.FullNet, validation_loader, device, epoch):
 
     loss_sum = 0
 
@@ -68,46 +64,31 @@ def validate(net, validation_loader, device, epoch):
             color = color.to(device)
             target = target.to(device)
 
-            images = color[:, :-2, :, :]
-            novelLocation = color[:, -2:, :, :]
-
-            predicted = net(depth, images, novelLocation)
+            predicted = net(depth, color)
             loss = F.mse_loss(predicted, target)
 
             loss_sum += torch.sum(loss.cpu())
 
-        # TODO: add other eval functions here
     append_loss("loss/validation.csv", epoch, 0, loss_sum)
 
     return loss_sum
 
 
-def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test"):
+def test_image(net: networks.FullNet, depth, color, target, device, epoch, out_folder="./eval_test"):
     # disable cudnn
     torch.backends.cudnn.benchmark = False
 
     utils.mkdirp(out_folder)
     net.eval()
     with torch.no_grad():
-        depth = torch.unsqueeze(torch.Tensor(depth), 0).to(device)
-        color = torch.unsqueeze(torch.Tensor(color), 0).to(device)
-
-        images = color[:, :-2, :, :]
-        novelLocation = color[:, -2:, :, :]
-
-        disp, warp, output = net.all_steps(depth, images, novelLocation)
+        depth, color = net.single_input(depth, color)
+        disp, warp, output = net.all_steps(depth, color)
 
         output = output[0].cpu()
         disp = disp[0, 0].cpu().numpy()
         warp = warp[0, :12].cpu().numpy()
-        _12, r, c = warp.shape
-        corners = np.moveaxis(warp.reshape(4, 3, r, c), 1, -1)
+        warped = utils.stack_warps(warp)
 
-        warped = np.vstack((
-            np.hstack((corners[0], corners[1])),
-            np.hstack((corners[2], corners[3]))))
-
-        # TODO: compute loss against target
         loss = torch.sum(F.mse_loss(output, torch.tensor(target)).detach().cpu())
         append_loss("loss/ref_image.csv", epoch, 0, loss)
 
@@ -121,13 +102,29 @@ def test_image(net, depth, color, target, device, epoch, out_folder="./eval_test
         if disp_min != disp_max:
             utils.save_disparity(f"{out_folder}/epoch_{epoch:03}_disparity.png", disp)
 
+def load_network():
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    net = networks.FullNet(device)
+    # move net to cuda BEFORE setting optimizer variables
+    net = net.to(device)
+
+    # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
+    optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
+
+    if params.start_epoch != 0:
+        # load previous epoch checkpoint
+        net.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "model")))
+        optimizer.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "optim")))
+
+    return net, optimizer, device
+
 
 def main():
     utils.mkdirp("loss")
 
     # determine whether to use cuda or cpu
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
 
     # lightFieldPaths = [
     #     "../datasets/reflective_17_eslf.png",
@@ -161,17 +158,7 @@ def main():
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
     validate_loader = DataLoader(validate_dataset, shuffle=True, batch_size=batch_size, num_workers=workers)
 
-    net = networks.FullNet(device)
-    # move net to cuda BEFORE setting optimizer variables
-    net = net.to(device)
-
-    # optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
-    optimizer = torch.optim.Adam(net.parameters(), lr=params.adam_lr)
-
-    if params.start_epoch != 0:
-        # load previous epoch checkpoint
-        net.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "model")))
-        optimizer.load_state_dict(torch.load(utils.get_checkpoint_path(params.start_epoch-1, "optim")))
+    net, optimizer, device = load_network()
 
     if params.start_epoch != 0 and params.run_test:
         test_image(net, test_depth, test_color, test_target, device, params.start_epoch - 1, out_folder="./eval_test")
@@ -184,31 +171,6 @@ def main():
         if params.run_test:
             test_image(net, test_depth, test_color, test_target, device, epoch, out_folder="./eval_test")
             print(f"Saved image for epoch {epoch}")
-
-
-def only_test_image():
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    print("Building training data")
-    flower_9 = f'../datasets/people_cropped/people_6_eslf.png'
-
-    print("Building test data")
-    # Fetch test data
-    test_data = datasets.LytroDataset([flower_9], training=False, cropped=True)
-    test_depth, test_color, test_target = test_data[36]
-    net = networks.FullNet(device)
-
-    if params.start_epoch != 0:
-        # load previous epoch checkpoint
-        net.load_state_dict(torch.load(utils.get_checkpoint_path(
-            params.start_epoch-1), map_location=torch.device(device)))
-
-    # move net to cuda BEFORE setting optimizer variables
-    net = net.to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=params.sgd_lr, momentum=params.sgd_momentum)
-    if params.start_epoch != 0:
-        test_image(net, test_depth, test_color, test_target, device, params.start_epoch - 1, out_folder="./eval_test")
 
 
 if __name__ == "__main__":

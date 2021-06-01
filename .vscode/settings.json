@@ -1,0 +1,6 @@
+{
+  "python.pythonPath": "/Users/wmd/.local/share/virtualenvs/src-4XNI5Okd/bin/python",
+  "python.analysis.extraPaths": [
+    "./src/disparitynet"
+  ]
+}

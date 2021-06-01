@@ -92,3 +92,12 @@ def save_image(name, img, minmax=(0, 1)):
     """Takes an image on the scale"""
     clipped = (np.clip(img, minmax[0], minmax[1]) - minmax[0]) * (255 / (minmax[1] - minmax[0]))
     imageio.imwrite(name, clipped.astype(np.uint8))
+
+def stack_warps(warp):
+    _12, r, c = warp.shape
+    corners = np.moveaxis(warp.reshape(4, 3, r, c), 1, -1)
+
+    warped = np.vstack((
+        np.hstack((corners[0], corners[1])),
+        np.hstack((corners[2], corners[3]))))
+    return warped

@@ -206,3 +206,29 @@ class LytroDataset(Dataset):
             np.full(colorShape, v, dtype=np.float32)
         ))
         return color
+
+    def completely_novel_view(self, patch, u, v):
+        p = 6
+        field = self.rawLightFields[patch]
+
+        startDepth = time()
+        grey = preprocess.crop_gray(field)
+        depth = preprocess.prepare_depth_features(grey, u, v)
+        print(f"Depth gen took {time() - startDepth:0.3}s")
+
+        field = np.moveaxis(field, -1, 2)
+
+        colorShape = (1, field.shape[3] - p*2, field.shape[4] - p*2)
+
+        color = self.assemble_color_net(
+            colorShape,
+            field[0, 0],
+            field[0, 7],
+            field[7, 0],
+            field[7, 7],
+            u,
+            v,
+            p,
+        )
+
+        return depth, color

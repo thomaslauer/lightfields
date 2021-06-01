@@ -14,7 +14,7 @@ source, *raws = sys.argv[1:]
 startR = coords[1] + 3
 startC = coords[0] + 3
 
-p = 12
+p = 12 + 10
 
 truth = imageio.imread(source)[startR::14, startC::14, :3][p:-p, p:-p]
 r, c, _3 = truth.shape
@@ -32,5 +32,5 @@ for rawPath in raws:
     ssim = structural_similarity(truth, raw, gaussian_weights=True, multichannel=True)
     psnr = peak_signal_noise_ratio(truth, raw)
     print(rawPath)
-    print(f"SSIM: {ssim}")
-    print(f"PSNR: {psnr}")
+    print(f"SSIM: {ssim:.5}")
+    print(f"PSNR: {psnr:.5}")

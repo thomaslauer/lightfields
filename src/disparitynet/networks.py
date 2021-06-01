@@ -1,4 +1,3 @@
-from typing import final
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,7 +12,7 @@ class FullNet(nn.Module):
         self.color = ColorNet()
         self.device = device
 
-    def forward(self, disparityFeatures, images, novelLocation):
+    def forward(self, disparityFeatures: torch.Tensor, colorFeatures: torch.Tensor):
         # bx(200 + 3*4 + 4)x60x60
 
         # disparityFeatures: (batch x 200 x H x W)
@@ -22,17 +21,25 @@ class FullNet(nn.Module):
         # result: RGB x W-12 x H-12
 
         # Run disparity
-        return self.all_steps(disparityFeatures, images, novelLocation)[2]
+        return self.all_steps(disparityFeatures, colorFeatures)[2]
 
     @torch.jit.export
-    def all_steps(self, disparityFeatures, images, novelLocation):
-        disparity = self.disparity(disparityFeatures)
+    def all_steps(self, disparityFeatures, colorFeatures):
+        images = colorFeatures[:, :-2, :, :]
+        novelLocation = colorFeatures[:, -2:, :, :]
+
+        disparity: torch.Tensor = self.disparity(disparityFeatures)
         # TODO: Warp images
         warps = self.warp_images(disparity, images, novelLocation)
 
         # Compute color from warped images
-        finalImg = self.color(warps)
+        finalImg: torch.Tensor = self.color(warps)
         return disparity, warps, finalImg
+
+    def single_input(self, disp, color):
+        depth = torch.unsqueeze(torch.as_tensor(disp, device=self.device), 0)
+        color = torch.unsqueeze(torch.as_tensor(color, device=self.device), 0)
+        return depth, color
 
     def warp_images(self, disp, images, novelLocation):
         """
