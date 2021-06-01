@@ -109,7 +109,7 @@ class LytroDataset(Dataset):
         if self.training:
             return len(self.patches) * 64
         else:
-            raise len(self.rawLightFields) * 64
+            return len(self.rawLightFields) * 64
 
     def __getitem__(self, idx):
         """
