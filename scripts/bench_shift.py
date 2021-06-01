@@ -60,15 +60,15 @@ def compare(name, img1, img2):
 
 
 def main():
-    source = "../tmp/flowers_25.png"
+    source = "../../tmp/flowers_25.png"
     img = cv.cvtColor(cv.imread(source, cv.IMREAD_COLOR)[
-                      7::14, 7::14].astype(np.float32) / 255, cv.COLOR_BGR2GRAY)
+                      7::14, 7::14].astype(np.float32) / 255, cv.COLOR_BGR2GRAY)[:102, :102]
     print(img.shape)
     result_shift = np.empty(img.shape, dtype=np.float32)
     result_shift_filter = np.empty(img.shape, dtype=np.float32)
     result_affine = np.empty(img.shape, dtype=np.float32)
 
-    count = 20
+    count = 100
     u, v = -21, 10.98
 
     shifts = []

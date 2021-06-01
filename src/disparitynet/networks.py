@@ -95,7 +95,8 @@ class FullNet(nn.Module):
             # p_i = p_i[:, :rows, :cols, :]
 
             projectedLocations = grid + (p_i - reshapedNovelLocation) * dupedDisparity
-            projectedLocations = projectedLocations / torch.tensor([[[[rows-1, cols-1]]]], device=self.device)
+            projectedLocations[..., 0] /= rows - 1
+            projectedLocations[..., 1] /= cols - 1
             projectedLocations = (projectedLocations - 0.5) * 2
             # print(projectedLocations.requires_grad)
 

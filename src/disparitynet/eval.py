@@ -21,11 +21,11 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
-        # "../datasets/microcropped_images/flowers_plants_25_eslf.png"
-        f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
+        "../datasets/microcropped_images/Rock.png"
+        # f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
     ]
 
-    epochNum = 4
+    epochNum = 12
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
 
@@ -34,6 +34,9 @@ def main():
 
     net = networks.FullNet(device)
     net.load_state_dict(torch.load(utils.get_checkpoint_path(epochNum), map_location=torch.device(device)))
+    # net = torch.jit.trace(net, (torch.rand(1, 200, 376, 541), torch.rand(
+    #     1, 4 * 5, 376 - 12, 541 - 12), torch.rand(1, 2, 376 - 12, 541 - 12)))
+    # torch.jit.save(net, "backups/main_model.pt")
     net = net.to(device)
     net.eval()
 
@@ -56,9 +59,9 @@ def main():
         utils.mkdirp(f"output/epoch_{epochNum}/color")
         utils.mkdirp(f"output/epoch_{epochNum}/disp")
         utils.mkdirp(f"output/epoch_{epochNum}/raw")
-        imageio.imwrite(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", img)
+        imageio.imwrite(f"output/epoch_{epochNum}/color/nn_0{y}_0{x}.png", np.clip(img * 255, 0, 255).astype(np.uint8))
         imageio.imwrite(f"output/epoch_{epochNum}/disp/nn_0{y}_0{x}.png", dispImg)
-        imageio.imwrite(f"output/epoch_{epochNum}/raw/nn_0{y}_0{x}.png", rawImg)
+        imageio.imwrite(f"output/epoch_{epochNum}/raw/nn_0{y}_0{x}.png", np.clip(rawImg * 255, 0, 255).astype(np.uint8))
 
     return
 
