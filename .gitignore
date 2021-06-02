@@ -435,7 +435,13 @@ src/naivenet/checkpoints/
 src/disparitynet/*checkpoints/
 src/disparitynet/*eval_test/
 
+eval_test*/
+loss*
+
 
 *.npy
 *_temp.tex
 tmp/
+
+
+

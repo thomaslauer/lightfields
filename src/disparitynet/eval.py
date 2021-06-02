@@ -53,7 +53,7 @@ def save_outputs(epoch, name, imgs):
     utils.save_image(f"output/epoch_{epoch}/warp/{name}", warp)
 
 def novel_view():
-    data = datasets.LytroDataset(["../datasets/microcropped_images/Rock.png"], training=False, cropped=True)
+    data = datasets.LytroDataset(["../datasets/microcropped_images/Rock.png"], training=False, cropped=False)
     net, _ = load_network(17)
     for i in tqdm(range(20, 40)):
         disp, color = data.completely_novel_view(0, i / 7, 0.5)
@@ -74,11 +74,11 @@ def main():
         # "../datasets/reflective_17_eslf.png",
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
-        "../datasets/microcropped_images/Rock.png"
-        # f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
+        # "../datasets/microcropped_images/Rock.png"
+        f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
     ]
 
-    epochNum = 17
+    epochNum = 68
     net, device = load_network(epochNum)
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
