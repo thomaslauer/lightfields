@@ -20,24 +20,27 @@ def train(net: networks.FullNet, train_loader, optimizer, device, epoch):
     loss_sum = 0
 
     print(f"Training epoch {epoch}")
-    for i, (depth, color, target) in enumerate(tqdm(train_loader)):
-        optimizer.zero_grad()
 
-        depth = depth.to(device)
-        color = color.to(device)
-        target = target.to(device)
 
-        predicted = net(depth, color)
+    with torch.profiler.profile() as profiler:
+        for i, (depth, color, target) in enumerate(tqdm(train_loader)):
+            optimizer.zero_grad()
 
-        loss = F.mse_loss(predicted, target)
+            depth = depth.to(device)
+            color = color.to(device)
+            target = target.to(device)
 
-        loss.backward()
-        optimizer.step()
-        loss_sum += torch.sum(loss.cpu()).item()
+            predicted = net(depth, color)
 
-        if (i + 1) % 500 == 0:
-            append_loss("loss/loss_train.csv", epoch, i, loss_sum / 500)
-            loss_sum = 0
+            loss = F.mse_loss(predicted, target)
+
+            loss.backward()
+            optimizer.step()
+            loss_sum += torch.sum(loss.cpu()).item()
+
+            if (i + 1) % 500 == 0:
+                append_loss("loss/loss_train.csv", epoch, i, loss_sum / 500)
+                loss_sum = 0
 
 
 def saveModel(net: networks.FullNet, optimizer, epoch):

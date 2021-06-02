@@ -15,6 +15,7 @@ tqdm = "*"
 pyssim = "*"
 scikit-image = "*"
 opencv-python = "*"
+torch-tb-profiler = "*"
 
 [dev-packages]
 

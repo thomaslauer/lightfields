@@ -3,14 +3,20 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
+from time import time
 
 
 class FullNet(nn.Module):
-    def __init__(self, device):
+    def __init__(self, device, benchmark=False):
         super(FullNet, self).__init__()
         self.disparity = DisparityNet()
         self.color = ColorNet()
         self.device = device
+        self.benchmark = benchmark
+
+        self.disparity_times = []
+        self.color_feature_times = []
+        self.color_img_times = []
 
     def forward(self, disparityFeatures: torch.Tensor, colorFeatures: torch.Tensor):
         # bx(200 + 3*4 + 4)x60x60
@@ -25,15 +31,35 @@ class FullNet(nn.Module):
 
     @torch.jit.export
     def all_steps(self, disparityFeatures, colorFeatures):
+
         images = colorFeatures[:, :-2, :, :]
         novelLocation = colorFeatures[:, -2:, :, :]
 
+        if self.benchmark:
+            torch.cuda.synchronize()
+            start_time = time()
+
         disparity: torch.Tensor = self.disparity(disparityFeatures)
-        # TODO: Warp images
+
+        if self.benchmark:
+            torch.cuda.synchronize()
+            self.disparity_times.append(time() - start_time)
+            start_time = time()
+
         warps = self.warp_images(disparity, images, novelLocation)
+
+        if self.benchmark:
+            torch.cuda.synchronize()
+            self.color_feature_times.append(time() - start_time)
+            start_time = time()
 
         # Compute color from warped images
         finalImg: torch.Tensor = self.color(warps)
+
+        if self.benchmark:
+            torch.cuda.synchronize()
+            self.color_img_times.append(time() - start_time)
+
         return disparity, warps, finalImg
 
     def single_input(self, disp, color):
@@ -121,6 +147,8 @@ class FullNet(nn.Module):
 
         return stacked
 
+    def get_stats(self):
+        return np.average(self.disparity_times), np.average(self.color_feature_times), np.average(self.color_img_times)
 
 class DisparityNet(nn.Module):
 

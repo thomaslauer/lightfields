@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
+import torch_tb_profiler
 
 import datasets
 import networks
@@ -8,11 +9,11 @@ import utils
 import params
 
 
-def load_network(save_epoch):
+def load_network(save_epoch, benchmark=False):
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    net = networks.FullNet(device)
+    net = networks.FullNet(device, benchmark=benchmark)
     net.load_state_dict(torch.load(utils.get_checkpoint_path(save_epoch), map_location=torch.device(device)))
     # net = torch.jit.trace(net, (torch.rand(1, 200, 376, 541), torch.rand(
     #     1, 4 * 5, 376 - 12, 541 - 12), torch.rand(1, 2, 376 - 12, 541 - 12)))
@@ -23,21 +24,23 @@ def load_network(save_epoch):
 
 
 def eval_net(net, depth, color):
-    with torch.no_grad():
-        depth, color = net.single_input(depth, color)
 
-        disp, warps, output = net.all_steps(depth, color)
+        with torch.no_grad():
+            depth, color = net.single_input(depth, color)
 
-        output = output[0].cpu()
-        disp = disp[0, 0].cpu()
-        warped = utils.stack_warps(warps[0, :12].cpu().numpy())
-        dispImg = disp.detach().numpy()
-        img = utils.torch2np_color(output.detach().numpy())
-        rawImg = img
-        img = utils.adjust_tone(img)
-        warped = utils.adjust_tone(warped)
+            disp, warps, output = net.all_steps(depth, color)
 
-        return img, dispImg, rawImg, warped
+            output = output[0].cpu()
+            disp = disp[0, 0].cpu()
+            warped = utils.stack_warps(warps[0, :12].cpu().numpy())
+            dispImg = disp.detach().numpy()
+            img = utils.torch2np_color(output.detach().numpy())
+            rawImg = img
+            img = utils.adjust_tone(img)
+            warped = utils.adjust_tone(warped)
+
+
+            return img, dispImg, rawImg, warped
 
 
 def save_outputs(epoch, name, imgs):
@@ -75,22 +78,35 @@ def main():
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
         # "../datasets/microcropped_images/Rock.png"
-        f"{params.drive_path}/datasets/microcropped_images/flowers_plants_9_eslf.png"
+        # f"{params.drive_path}/datasets/microcropped_images/flowers_plants_25_eslf.png"
+        # "/home/thomas/Downloads/TestSet/PAPER/Rock.png"
+        "/home/thomas/classes/datasets/raw/flowers_plants_9_eslf.png"
     ]
 
     epochNum = 68
-    net, device = load_network(epochNum)
+    net, device = load_network(epochNum, True)
 
-    full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=True)
+    full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=False)
 
-    for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
-        x = i // 8 + 1
-        y = i % 8 + 1
+    with torch.profiler.profile(
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./result'),
+        with_stack=True
+    ) as profiler:
+        for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
+            x = i // 8 + 1
+            y = i % 8 + 1
 
-        outputs = eval_net(net, depth, color)
+            outputs = eval_net(net, depth, color)
 
-        name = f"nn_0{y}_0{x}.png"
-        save_outputs(epochNum, name, outputs)
+            name = f"nn_0{y}_0{x}.png"
+
+            profiler.step()
+
+            save_outputs("flowers_9", name, outputs)
+
+
+    disp_time, color_feature_time, color_img_time = net.get_stats()
+    print(f"disp: {disp_time}, color features: {color_feature_time}, color img time: {color_img_time}")
 
 
 if __name__ == "__main__":
