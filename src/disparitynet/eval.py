@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-import torch_tb_profiler
+# import torch_tb_profiler
 
 import datasets
 import networks
@@ -24,23 +24,22 @@ def load_network(save_epoch, benchmark=False):
 
 
 def eval_net(net, depth, color):
+    with torch.no_grad():
+        depth, color = net.single_input(depth, color)
 
-        with torch.no_grad():
-            depth, color = net.single_input(depth, color)
+        disp, warps, output = net.all_steps(depth, color)
 
-            disp, warps, output = net.all_steps(depth, color)
-
-            output = output[0].cpu()
-            disp = disp[0, 0].cpu()
-            warped = utils.stack_warps(warps[0, :12].cpu().numpy())
-            dispImg = disp.detach().numpy()
-            img = utils.torch2np_color(output.detach().numpy())
-            rawImg = img
-            img = utils.adjust_tone(img)
-            warped = utils.adjust_tone(warped)
+        output = output[0].cpu()
+        disp = disp[0, 0].cpu()
+        warped = utils.stack_warps(warps[0, :12].cpu().numpy())
+        dispImg = disp.detach().numpy()
+        img = utils.torch2np_color(output.detach().numpy())
+        rawImg = img
+        img = utils.adjust_tone(img)
+        warped = utils.adjust_tone(warped)
 
 
-            return img, dispImg, rawImg, warped
+        return img, dispImg, rawImg, warped
 
 
 def save_outputs(epoch, name, imgs):
@@ -78,9 +77,10 @@ def main():
         # "../datasets/reflective_18_eslf.png",
         # "../datasets/flowers_plants/raw/flowers_plants_25_eslf.png"
         # "../datasets/microcropped_images/Rock.png"
+        "../../tmp/rock.png"
         # f"{params.drive_path}/datasets/microcropped_images/flowers_plants_25_eslf.png"
         # "/home/thomas/Downloads/TestSet/PAPER/Rock.png"
-        "/home/thomas/classes/datasets/raw/flowers_plants_9_eslf.png"
+        # "/home/thomas/classes/datasets/raw/flowers_plants_9_eslf.png"
     ]
 
     epochNum = 68
@@ -88,21 +88,21 @@ def main():
 
     full_dataset = datasets.LytroDataset(lightFieldPaths, training=False, cropped=False)
 
-    with torch.profiler.profile(
-        on_trace_ready=torch.profiler.tensorboard_trace_handler('./result'),
-        with_stack=True
-    ) as profiler:
-        for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
-            x = i // 8 + 1
-            y = i % 8 + 1
+    # with torch.profiler.profile(
+    #     on_trace_ready=torch.profiler.tensorboard_trace_handler('./result'),
+    #     with_stack=True
+    # ) as profiler:
+    for i, (depth, color, _target) in enumerate(tqdm(full_dataset)):
+        x = i // 8 + 1
+        y = i % 8 + 1
 
-            outputs = eval_net(net, depth, color)
+        outputs = eval_net(net, depth, color)
 
-            name = f"nn_0{y}_0{x}.png"
+        name = f"nn_0{y}_0{x}.png"
 
-            profiler.step()
+        # profiler.step()
 
-            save_outputs("flowers_9", name, outputs)
+        save_outputs("rock", name, outputs)
 
 
     disp_time, color_feature_time, color_img_time = net.get_stats()

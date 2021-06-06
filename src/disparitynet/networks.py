@@ -36,20 +36,20 @@ class FullNet(nn.Module):
         novelLocation = colorFeatures[:, -2:, :, :]
 
         if self.benchmark:
-            torch.cuda.synchronize()
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             start_time = time()
 
         disparity: torch.Tensor = self.disparity(disparityFeatures)
 
         if self.benchmark:
-            torch.cuda.synchronize()
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             self.disparity_times.append(time() - start_time)
             start_time = time()
 
         warps = self.warp_images(disparity, images, novelLocation)
 
         if self.benchmark:
-            torch.cuda.synchronize()
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             self.color_feature_times.append(time() - start_time)
             start_time = time()
 
@@ -57,7 +57,7 @@ class FullNet(nn.Module):
         finalImg: torch.Tensor = self.color(warps)
 
         if self.benchmark:
-            torch.cuda.synchronize()
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             self.color_img_times.append(time() - start_time)
 
         return disparity, warps, finalImg
