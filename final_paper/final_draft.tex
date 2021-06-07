@@ -343,6 +343,7 @@ Average
         the large patches of relatively low detail, such as the the sidewalk in the lower left corner. This was
         a pattern which was prevalent the images we tested reconstruction on.
     }
+    \label{fig:comparison}
 \end{figure*}
 
 \begin{figure*}[p]
@@ -367,7 +368,12 @@ and the noise introduced by reconstruction. Each result and ground truth image w
 non-captured pixels around the edges would not be included in our metrics.
 
 We computed the PSNR and SSIM scores for all views of 4 different light fields, giving us 256 views to compare.
-These scores were averaged to compute the average PSNR and SSIM of the two networks. 
+These scores were averaged to compute the average PSNR and SSIM of the two networks.
+The performance of the two networks is very comparable, and each network outperforms the other in certain situtaions.
+For example, our network outperforms Kalantari \etal's on Flowers and Plants 25 from the Stanford Light Field repository, 
+because this is more representative of the data our network was trained on. Their network outperforms ours on 
+the Rock light field, since their dataset had more variation overall and likely generalizes better.
+For a comparison of our network's performance against Kalantari \etal's, see Figure \ref{fig:comparison}.
 
 
 We created a series of animations to compare our results to Kalantari \etal's. These can be viewed 
