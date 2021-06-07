@@ -107,7 +107,7 @@ field camera data \cite{LearningViewSynthesis} in PyTorch.
 %%%%%%%%% BODY TEXT
 \section{Introduction}
 
-Standard images are can be paramaratized by an irradience function $L(\theta, \phi)$, which
+Standard images are can be parameterized by an irradiance function $L(\theta, \phi)$, which
 describes the light entering a camera from a certain angle $(\theta, \phi)$. Light fields
 extend this to add a spatial component, $L(x, y, z, \theta, \phi)$ or $L(x, y, \theta, \phi)$. 
 These two representations are equivalent if the radiance of a ray remains constant along its length,
@@ -123,7 +123,7 @@ However, many of the edge outer views contain invalid data, so we focus on the c
 The resolution of each view is much lower than consumer cameras, 
 and contributed to the slow adoption of light field cameras in consumer products.
 
-If the camera could sample only the corner 4 views and reliavly interpolate the ones in between, each individual view
+If the camera could sample only the corner 4 views and reliably interpolate the ones in between, each individual view
 could be of a much higher resolution. This would also lower the cost of light field cameras by reducing the required
 sensor resolution. Alternatively, phones with multiple cameras could use each camera as a 
 view of the scene, and create light fields with no additional hardware. 
@@ -220,12 +220,12 @@ $$
 Where $s$ is the pixel location, $p_i$ is the location of the input view, and $q$ is the location of the
 desired novel view. $D_q(s)$ is the estimated disparity at the pixel from the depth estimation network,
 and $L_{p_i}(s)$ is the color of the novel view. We use the grid\_sample function from PyTorch, which integrates
-with autograd to allow backpropegating the weights through $L_{p_i}(s)$. $s$, $p_i$, and $q$ are all 
+with autograd to allow backpropagating the weights through $L_{p_i}(s)$. $s$, $p_i$, and $q$ are all 
 constant precalculated inputs, and autograd is able to compute the derivative 
 $\frac{\partial \overline{L}_{p_i}}{\partial D_q}$ automatically. 
 
 These four RGB images, along with the $u$ and $v$ 
-locations of the desired novel view and the disparity estimate from the first network are concatonated
+locations of the desired novel view and the disparity estimate from the first network are concatenated
 together into a single 15 channel image. Kalantari \etal name this image $H$. This is used as the input to the color estimation network, which
 has the following architecture:
 
@@ -269,7 +269,7 @@ to be done manually outside of a PyTorch function, because autograd builds the s
 operations to backpropegate gradients on.
 
 Additionally, we used the ADAM optimizer with a learning rate of $1e-4$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, and $eps = 1e-8$.
-We evalutate our training loop on batches of 64 $60 \times 60$ pixel patches. 
+We evaluate our training loop on batches of 64 $60 \times 60$ pixel patches. 
 Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
 individual pixels to train on. 
 This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained and their roughly 100 million samples.
@@ -359,7 +359,7 @@ Average
     }
 \end{figure*}
 
-When evaluating the effectiveness of our netork, we elected to use both the structural similarity index measure (SSIM)
+When evaluating the effectiveness of our network, we elected to use both the structural similarity index measure (SSIM)
 and Peak signal-to-noise ratio (PSNR) to compare results to the ground truth capture. SSIM represents the similarity
 between a distorted and distortion free image, and is a value in the range 0 to 1, where 1 indicates perfect retention
 of perceptual quality compared to the ground truth data. PSNR is the ratio between the maximum intensity of the image
@@ -376,7 +376,7 @@ We created a series of animations to compare our results to Kalantari \etal's. T
 \section{Conclusions and Future Work}
 
 In the future, there is potential to further improve this system with varied input views and synthesized
-view depth. Additionally, the depth estimation used at present is not entirely scale agnositic as it
+view depth. Additionally, the depth estimation used at present is not entirely scale agnostic as it
 uses a pixel based window for disparity estimation. This can definitely be adjusted to be more resolution
 independent as is on of the reasons we were unable to test it on data from the Stanford lightfield array.
 
