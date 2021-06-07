@@ -7,6 +7,41 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathrsfs}
+\usepackage{multicol}
+\usepackage{caption}
+
+%%%%%%%%%%%%%%%%%%%%%%%% FEEDBACK %%%%%%%%%%%%%%%%%%%%%%%%
+% This is the report, not the proposal. The report should emphasis different items, especially those
+% listed in the grading criteria https://cseweb.ucsd.edu/classes/sp21/cse291-i/grading.html
+
+% The first section of the paper should motivate the work. State the people problem (how working on
+% this problem benefits people) and the technical problem. Then, state why previous solutions are
+% inadequate, which you've done. Finally, state the research question that the paper your
+% implemented answers and the proposed solution.
+
+% Rather than cite/refer to the paper you're implementing, include enough details in your report
+% that the reader understand what you've implemented and only has to look at the original paper if
+% they want all the details.
+
+% Provide a very brief description of SSIM and PSNR, since you're using these to evaluate your
+% results and compare them to others.
+%%%%%%%%%%%%%%%%%%%%%%%% FEEDBACK %%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% SECTIONS WE NEED
+%
+
+% Real world human problem (spatial resolution issue, why interpolating would help)
+
+% Why interpolating is difficult 
+% Why other approaches failed (we have this)
+
+% More details on network and training process
+% how this forces the network to estimate disparity
+
+% Performance metrics
+% Explain SSIM and PSNR (bigger is better)
+
 
 % Include other packages here, before hyperref.
 
@@ -72,8 +107,28 @@ field camera data \cite{LearningViewSynthesis} in PyTorch.
 %%%%%%%%% BODY TEXT
 \section{Introduction}
 
-A Lytro is a common light field camera which uses microlenses to capture multiple
-perspectives of a scene in one light field. 
+Standard images are can be paramaratized by an irradience function $L(\theta, \phi)$, which
+describes the light entering a camera from a certain angle $(\theta, \phi)$. Light fields
+extend this to add a spatial component, $L(x, y, z, \theta, \phi)$ or $L(x, y, \theta, \phi)$. 
+These two representations are equivalent if the radiance of a ray remains constant along its length,
+which is a valid assumption for rays travelling through air.
+
+Lytro is a commodity light field camera which uses microlenses to capture multiple
+perspectives of a scene on one image sensor. The sensors of light field cameras have a 
+limited resolution, and a tradeoff must be made between capturing more views of the scene 
+(by densely sampling $x$, $y$, and $z$ in spatial resolution), or increasing the resolution of each view 
+(by densely sampling $\theta$ and $\phi$). 
+Lytro samples approximately $14 \times 14$ views of the scene, each with a resolution of 541 by 376 pixels.
+However, many of the edge outer views contain invalid data, so we focus on the center $8 \times 8$ section.
+The resolution of each view is much lower than consumer cameras, 
+and contributed to the slow adoption of light field cameras in consumer products.
+
+If the camera could sample only the corner 4 views and reliavly interpolate the ones in between, each individual view
+could be of a much higher resolution. This would also lower the cost of light field cameras by reducing the required
+sensor resolution. Alternatively, phones with multiple cameras could use each camera as a 
+view of the scene, and create light fields with no additional hardware. 
+
+\section{Current Work}
 
 % Insert summary of levoy 96 (this bit is related) (needs proper citation)
 Kalantari summarizes several existing methods for interpolating lightfields and their drawbacks.
@@ -109,7 +164,7 @@ same metrics used by the original paper.
 
 \section{Technology}
 
-We implemented this using PyTorch, because it has high performance, 
+We implemented this using PyTorch, because it has high performance,
 automatically handles calculating derivatives, and we have previous experience with it.
 In addition, we used NumPy to compute the preprocessing and feature extraction of the input lightfields,
 and SciPy for the image quality metrics.
@@ -193,28 +248,45 @@ because it would make the training patches less representative of the entire ima
 
 \subsection{Training}
 
-Our loss function is directly the $\mathcal{L}_2$ distance between the channel wise RGB values of the novel image
+Our loss function is directly the $\mathcal{L}_2$ distance between the channel-wise RGB values of the novel image
 and the ground truth image. While Kalantari \etal needed to numerically calculate the gradient of the interpolation
 step which warps the ground truth images to the novel viewpoint, PyTorch's autograd is able to handle this automatically.
 We needed to be careful to not destroy the gradient chain while calculating $s + \left(p_i - q\right) D_q(s)$, which had
-to be done manually outside of a PyTorch function, because of the way autograd builds the sequence of operations to backpropegate on.
+to be done manually outside of a PyTorch function, because autograd builds the sequence of 
+operations to backpropegate gradients on.
 
-We used the ADAM optimizer with a learning rate of $1e-3$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, and $eps = 1e-8$. Our batch size 
-is 64 $60 \times 60$ patches. Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
-individual pixels to train on. This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained on.
+Additionally, we used the ADAM optimizer with a learning rate of $1e-4$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, and $eps = 1e-8$.
+We evalutate our training loop on batches of 64 $60 \times 60$ pixel patches. 
+Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
+individual pixels to train on. 
+This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained and their roughly 100 million samples.
 Our implementation is also significantly faster than theirs, it took their network 12.3 seconds to generate a novel viewpoint
 whereas ours takes 6.2 seconds. We believe this is mostly because of improvements in hardware from 2016, and has little to do with the
-actual algorithms.
+actual algorithms. We trained the final version of our network for 69 epochs over the course of approximately 24 hours cumulatively.
+
+\begin{figure*}
+\begin{center}
+\begin{tabular}{|l | c c c c|}
+    \hline
+    Network & Feature Extraction & Disparity & Color Features (Warp) & Color Network \\ \hline
+    Reference (4x CPU) & 3.19s & 4.52s & 0.13s & 1.52s \\
+    Ours (1x CPU) & 1.3s & 6.62s & 0.09s & 1.85s \\
+    Ours (GPU) & 1.3s (CPU) & 0.104s & 0.0044s & 0.024s \\ \hline
+\end{tabular}
+\caption{Insert some insightful caption here}
+\end{center}
+\end{figure*}
+
 
 \section{Results}
 
-Because of the much larger datset, we have currently trained for 17 epochs. We are currently training up to 100 epochs, but we 
-wanted to be sure we had some metrics for this preliminary report. For this reason, we expect that our results will perform worse
-than our final versions. 
+When evaluating the effectiveness of our netork, we elected to use both the structural similarity index measure (SSIM)
+and Peak signal-to-noise ratio (PSNR) to compare results to the ground truth capture. SSIM represents the similarity
+between a distorted and distortion free image, and is a value in the range 0 to 1, where 1 indicates perfect retention
+of perceptual quality compared to the ground truth data. PSNR is the ratio between the maximum intensity of the image
+and the noise introduced by reconstruction. Each result and ground truth image was additionally cropped so any
+non-captured pixels around the edges would not be included in our metrics.
 
-These are the structural similarity scores and peak signal to noise ratio scores of our images compared to the ground truth.
-
-\pagebreak
 
 \begin{center}
 Flowers and Plants 25
@@ -225,9 +297,7 @@ Flowers and Plants 25
     Reference & 0.931 & 33.19 \\ 
 \end{tabular}
 \end{center}
-
-\medspace
-
+            
 \begin{center}
 Rocks
 
@@ -239,64 +309,50 @@ Rocks
 \end{tabular}
 \end{center}
 
-
-Here is an example from the Stanford Light Field Archive, specifically Flowers and Plants number 25.
-The different crop factors are because Kalantari \etal decided to 
-
-\begin{figure}[h]
 \begin{center}
-\caption{Kalantari \etal Flowers 25}
-\includegraphics[width=8cm]{flowers_25/kalantari_05_05.png}
+Average
+
+\begin{tabular}{|c c c|}
+    Network & SSIM & PSNR \\ \hline
+    Ours & 0.945 & 34.47 \\
+    Reference & 0.942 & 34.37 \\ 
+\end{tabular}
 \end{center}
-\end{figure}
 
-\begin{figure}[h]
-\begin{center}
-\caption{Our Flowers 25}
-\includegraphics[width=8cm]{flowers_25/ours_05_05.png}
-\end{center}
-\end{figure}
+\begin{figure*}[t]
+    \begin{multicols}{3}
+        \includegraphics[width=\linewidth]{flowers_25/kalantari_05_05.png}\par\caption*{Kalantari \etal}
+        \includegraphics[width=\linewidth]{flowers_25/ours_05_05.png}\par\caption*{Our Results}
+        \includegraphics[width=\linewidth]{flowers_25/truth_05_05.png}\par\caption*{Ground Truth}
+    \end{multicols}
+    \begin{multicols}{3}
+        \includegraphics[width=\linewidth]{rock/kalantari_05_05.png}\par\caption*{Kalanatri \etal}
+        \includegraphics[width=\linewidth]{rock/ours_05_05.png}\par\caption*{Our Results}
+        \includegraphics[width=\linewidth]{rock/truth_05_05.png}\par\caption*{Ground Truth}
+    \end{multicols}
+    \caption{
+        Here we compare the results from Kalantari \etal's implementation, our implementation, and the ground
+        truth image at view (5, 5). We chose to compare this view since it is one of the farthest from the
+        corner views. The two network's performance is very comperable, and both were able to recover some
+        details the other was not. Our network was able to reconstruct the thin leaf, while we struggled with
+        
+    }
+\end{figure*}
 
-\begin{figure}[h]
-\begin{center}
-\caption{Ground Truth Flowers 25}
-\includegraphics[width=8cm]{flowers_25/truth_05_05.png}
-\end{center}
-\end{figure}
+\section{Conclusions and Future Work}
 
+CONCLUSIONGS
 
-Here are the results from the rock example Kalantari uses. We used a subset of the Stanford Lytro Archive to train, and are
-going to retrain the network using their light fields that they captured. Our network does need a lot more training time
-at this point, but still performs well compared to other implementations such as Wanner and Goldluecke, even though
-it is seriously under trained. 
-
-\begin{figure}[h]
-\begin{center}
-\caption{Kalantari \etal Rock}
-\includegraphics[width=8cm]{rock/kalantari_05_05.png}
-\end{center}
-\end{figure}
-
-\begin{figure}[h]
-\begin{center}
-\caption{Our Rock}
-\includegraphics[width=8cm]{rock/ours_05_05.png}
-\end{center}
-\end{figure}
-
-\begin{figure}[h]
-\begin{center}
-\caption{Ground Truth Rock}
-\includegraphics[width=8cm]{rock/truth_05_05.png}
-\end{center}
-\end{figure}
-
-
-\pagebreak
+In the future, there is potential to further improve this system with varied input views and synthesized
+view depth. Additionally, the depth estimation used at present is not entirely scale agnositic as it
+uses a pixel based window for disparity estimation. This can definitely be adjusted to be more resolution
+independent as is on of the reasons we were unable to test it on data from the Stanford lightfield array.
 
 {\small
 \bibliographystyle{ieee_fullname}
 \bibliography{egbib}
 }
+
+
 
 \end{document}
