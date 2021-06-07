@@ -203,12 +203,14 @@ Here is the architecture of the disparity estimation network.
 
 \begin{center}
 \begin{tabular}{|c c c c|}
+    \hline
     Input & Output & Kernel Size & Activation \\
     \hline
     200 & 100 & $7 \times 7$ & ReLU \\
     100 & 100 & $5 \times 5$ & ReLU \\
     100 & 50 & $3 \times 3$ & ReLU \\
     50 & 1 & $1 \times 1$ & None \\
+    \hline
 \end{tabular}
 \end{center}
 
@@ -233,12 +235,14 @@ has the following architecture:
 
 \begin{center}
 \begin{tabular}{|c c c c|}
+    \hline
     Input & Output & Kernel Size & Activation \\
     \hline
     15 & 100 & $7 \times 7$ & ReLU \\
     100 & 100 & $5 \times 5$ & ReLU \\
     100 & 50 & $3 \times 3$ & ReLU \\
     50 & 3 & $1 \times 1$ & None \\
+    \hline
 \end{tabular}
 \end{center}
 
@@ -273,7 +277,7 @@ actual algorithms. We trained the final version of our network for 69 epochs ove
     Ours (1x CPU) & 1.3s & 6.62s & 0.09s & 1.85s \\
     Ours (GPU) & 1.3s (CPU) & 0.104s & 0.0044s & 0.024s \\ \hline
 \end{tabular}
-\caption{Insert some insightful caption here}
+\caption{Execution time of their Matlab implementation and our PyTorch implementation.}
 \end{center}
 \end{figure*}
 
@@ -292,9 +296,11 @@ non-captured pixels around the edges would not be included in our metrics.
 Flowers and Plants 25
 
 \begin{tabular}{|c c c|}
+    \hline
     Network & SSIM & PSNR \\ \hline
     Ours & 0.935 & 33.615 \\
     Reference & 0.931 & 33.19 \\ 
+    \hline
 \end{tabular}
 \end{center}
             
@@ -302,10 +308,12 @@ Flowers and Plants 25
 Rocks
 
 \begin{tabular}{|c c c|}
+    \hline
     Network & SSIM & PSNR \\ \hline
     Ours & 0.932 & 31.46 \\
     Reference & 0.969 & 34.66 \\ 
-    Wanner and Goldluecke & 0.488 & 16.57 
+    Wanner and Goldluecke & 0.488 & 16.57 \\
+    \hline
 \end{tabular}
 \end{center}
 
@@ -313,29 +321,54 @@ Rocks
 Average
 
 \begin{tabular}{|c c c|}
+    \hline
     Network & SSIM & PSNR \\ \hline
     Ours & 0.945 & 34.47 \\
     Reference & 0.942 & 34.37 \\ 
+    \hline
 \end{tabular}
 \end{center}
 
-\begin{figure*}[t]
+\begin{figure*}[h]
     \begin{multicols}{3}
-        \includegraphics[width=\linewidth]{flowers_25/kalantari_05_05.png}\par\caption*{Kalantari \etal}
-        \includegraphics[width=\linewidth]{flowers_25/ours_05_05.png}\par\caption*{Our Results}
-        \includegraphics[width=\linewidth]{flowers_25/truth_05_05.png}\par\caption*{Ground Truth}
+        \includegraphics[width=\linewidth]{flowers_25/kalantari_05_05.png}
+        \includegraphics[width=\linewidth]{flowers_25/ours_05_05.png}
+        \includegraphics[width=\linewidth]{flowers_25/truth_05_05.png}
     \end{multicols}
     \begin{multicols}{3}
         \includegraphics[width=\linewidth]{rock/kalantari_05_05.png}\par\caption*{Kalanatri \etal}
         \includegraphics[width=\linewidth]{rock/ours_05_05.png}\par\caption*{Our Results}
         \includegraphics[width=\linewidth]{rock/truth_05_05.png}\par\caption*{Ground Truth}
     \end{multicols}
+    \begin{multicols}{2}
+        \includegraphics[width=\linewidth]{truth_05_05_map.png}
+        \begin{multicols}{3}
+            \includegraphics[width=\linewidth]{rock_crop_leaf/kalantari_05_05.png}\par\vspace{0.1in}\includegraphics[width=\linewidth]{rock_crop_walk/kalantari_05_05.png}\par\caption*{Kalantari \etal}
+            \includegraphics[width=\linewidth]{rock_crop_leaf/ours_05_05.png}\par\vspace{0.1in}\includegraphics[width=\linewidth]{rock_crop_walk/ours_05_05.png}\par\caption*{Ours}
+            \includegraphics[width=\linewidth]{rock_crop_leaf/truth_05_05.png}\par\vspace{0.1in}\includegraphics[width=\linewidth]{rock_crop_walk/truth_05_05.png}\par\caption*{Ground Truth}
+        \end{multicols}    
+    \end{multicols}
     \caption{
         Here we compare the results from Kalantari \etal's implementation, our implementation, and the ground
         truth image at view (5, 5). We chose to compare this view since it is one of the farthest from the
         corner views. The two network's performance is very comperable, and both were able to recover some
         features the other was not. Our network was able to reconstruct the thin leaf, while we struggled with
-        the large patches of relatively low detail, such as the the sidewalk in the lower left corner.
+        the large patches of relatively low detail, such as the the sidewalk in the lower left corner. This was
+        a pattern which was prevalent the images we tested reconstruction on.
+    }
+\end{figure*}
+
+\begin{figure*}[h]
+    \begin{multicols}{2}
+        \includegraphics[width=\linewidth]{flowers_25/ours_05_05_disp.png}\par\caption*{Our Generated Disparity}
+        \includegraphics[width=\linewidth]{flowers_25/stanford_depth.png}\par\caption*{Stanford Lytro Archive Depth}
+    \end{multicols}
+    \caption{
+        This is a comparison between our generated disparity map and the depth map from the Stanford Lytro Archive.
+        The disparity map from the network has a halo effect around the edges of objects, we believe these are areas where changes
+        in the image warping can have a heavy effect on our $\mathcal{L}_2$ loss function. Regions of contiguous color
+        would be less sensitive to changes in warping, and therefore we expect they would be penalized less heavily.
+        However, this does not need to be true disparity, just what the color estimation network needs to reconstruct the final image.
     }
 \end{figure*}
 
