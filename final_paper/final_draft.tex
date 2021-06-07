@@ -153,15 +153,6 @@ The second network then takes these warped images, along with some additional me
 to produce the final RGB image of the novel view. Keeping this process differentiable allows both CNNs to 
 be trained at the same time, which lets the disparity estimator become tuned to work with the final CNN.
 
-\subsection{Our Proposal}
-
-Our goal is to reimplement the paper \textit{Learning-Based View Synthesis for Light Field Cameras} by 
-Kalantari \etal~\cite{LearningViewSynthesis} and additionally try to apply this technique to non-Lytro camera
-array captures. Further, we would like to investigate rendering novel views outside of the planar
-quadrilateral formed by the source images. To evaluate the performance of our model, we will use 
-the structural similarity index measure (SSIM) and peak signal to noise ratio (PSNR), which are the 
-same metrics used by the original paper.
-
 \section{Technology}
 
 We implemented this using PyTorch, because it has high performance,
@@ -169,15 +160,16 @@ automatically handles calculating derivatives, and we have previous experience w
 In addition, we used NumPy to compute the preprocessing and feature extraction of the input lightfields,
 and SciPy for the image quality metrics.
 
-We are not expecting to get real time performance, the paper claims it took 12.3 seconds to synthesize
-a single image using a Matlab implementation. We will stitch the individual images into a video to
-help visualize the results.
-
-\section{Datasets}
+\section{Dataset}
 
 We train our model using using Lytro captures since they represent a regularized input format with
 online datasets easily available. In this paper, we make use of the Standford Lytro dataset by Raj \etal~\cite{StanfordLytro}
-In addition to the ease of availability, these datasets also provide a 
+Further, Lytro captures are ideal for our purposes since it contains a large number of separate views between the
+four corner images we use. Our dataset is comprised of 68 images primarily from their flowers and plants dataset with
+other from occlusions and miscellaneous. Because Kalanatri \etal noted their implementation had issues with thin occlusions
+we intentionally decided to do a large amount of our training on flowers and plants since those tended to have a large number
+of thin, complex occlusions for the network to learn to interpret. A full list of the images used for training and
+validation is included in our supplemental code.
 
 \section{Implementation Details}
 
@@ -192,6 +184,10 @@ undesirable artifacts sometimes occur and train on $60\times60$ patches with a s
 Each patch has its depth data estimated for all 64 ground truths and is saved to disk. Across the 68 images from the
 Stanford Lytro dataset by Raj \etal~\cite{StanfordLytro}, we synthesize roughly 600,000 unique patch views total split
 90/10 between training and validation passes.
+
+For the disparity features, we estimate 100 disparity levels over a $[-21, 21]$ pixel window using the process from Tao \etal~\cite{tao2013depth}.
+After backwarping each of the four corner images to the target location, we compute the mean and average at each pixel across the four warped images
+for that disparity level. All of these features are then packaged into a $200 \times H \times W$ array to be fed into the disparity network.
 
 \subsection{Network}
 
@@ -225,7 +221,7 @@ Where $s$ is the pixel location, $p_i$ is the location of the input view, and $q
 desired novel view. $D_q(s)$ is the estimated disparity at the pixel from the depth estimation network,
 and $L_{p_i}(s)$ is the color of the novel view. We use the grid\_sample function from PyTorch, which integrates
 with autograd to allow backpropegating the weights through $L_{p_i}(s)$. $s$, $p_i$, and $q$ are all 
-constant precalculated inputs, but autograd is able to compute the derivative 
+constant precalculated inputs, and autograd is able to compute the derivative 
 $\frac{\partial \overline{L}_{p_i}}{\partial D_q}$ automatically. 
 
 These four RGB images, along with the $u$ and $v$ 
@@ -291,6 +287,13 @@ of perceptual quality compared to the ground truth data. PSNR is the ratio betwe
 and the noise introduced by reconstruction. Each result and ground truth image was additionally cropped so any
 non-captured pixels around the edges would not be included in our metrics.
 
+We computed the PSNR and SSIM scores for all views of 4 different light fields, giving us 256 views to compare.
+These scores were averaged to compute the average PSNR and SSIM of the two networks. 
+
+
+We created a series of animations to compare our results to Kalantari \etal's. These can be viewed 
+\href{https://drive.google.com/drive/folders/1DDbB1v1vbq7zsg3srJPDKFlI9H7mGEmC?usp=sharing}{here}.
+
 
 \begin{center}
 Flowers and Plants 25
@@ -323,8 +326,8 @@ Average
 \begin{tabular}{|c c c|}
     \hline
     Network & SSIM & PSNR \\ \hline
-    Ours & 0.945 & 34.47 \\
-    Reference & 0.942 & 34.37 \\ 
+    Ours & 0.953 & 35.67 \\
+    Reference & 0.957 & 35.99 \\ 
     \hline
 \end{tabular}
 \end{center}
@@ -374,12 +377,15 @@ Average
 
 \section{Conclusions and Future Work}
 
-CONCLUSIONGS
-
 In the future, there is potential to further improve this system with varied input views and synthesized
 view depth. Additionally, the depth estimation used at present is not entirely scale agnositic as it
 uses a pixel based window for disparity estimation. This can definitely be adjusted to be more resolution
 independent as is on of the reasons we were unable to test it on data from the Stanford lightfield array.
+
+While we initially wanted to generate out of plane images with this technique, we realized that our training dataset
+of Lytro light fields has no ground truth information for out of plane images. This means that we can not directly
+train our network to produce out of plane images. However, this network could be used to densely sample a sparse light field,
+and a more traditional approach could be used to generate the out of plane images.
 
 {\small
 \bibliographystyle{ieee_fullname}
