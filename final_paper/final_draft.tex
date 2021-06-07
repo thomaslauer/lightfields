@@ -248,6 +248,19 @@ because it would make the training patches less representative of the entire ima
 
 \subsection{Training}
 
+\begin{figure*}
+\begin{center}
+\begin{tabular}{|l | c c c c|}
+    \hline
+    Network & Feature Extraction & Disparity & Color Features (Warp) & Color Network \\ \hline
+    Reference (4x CPU) & 3.19s & 4.52s & 0.13s & 1.52s \\
+    Ours (1x CPU) & 1.3s & 6.62s & 0.09s & 1.85s \\
+    Ours (GPU) & 1.3s (CPU) & 0.104s & 0.0044s & 0.024s \\ \hline
+\end{tabular}
+\caption{Execution time of their Matlab implementation and our PyTorch implementation.}
+\end{center}
+\end{figure*}
+
 Our loss function is directly the $\mathcal{L}_2$ distance between the channel-wise RGB values of the novel image
 and the ground truth image. While Kalantari \etal needed to numerically calculate the gradient of the interpolation
 step which warps the ground truth images to the novel viewpoint, PyTorch's autograd is able to handle this automatically.
@@ -264,36 +277,7 @@ Our implementation is also significantly faster than theirs, it took their netwo
 whereas ours takes 6.2 seconds. We believe this is mostly because of improvements in hardware from 2016, and has little to do with the
 actual algorithms. We trained the final version of our network for 69 epochs over the course of approximately 24 hours cumulatively.
 
-\begin{figure*}
-\begin{center}
-\begin{tabular}{|l | c c c c|}
-    \hline
-    Network & Feature Extraction & Disparity & Color Features (Warp) & Color Network \\ \hline
-    Reference (4x CPU) & 3.19s & 4.52s & 0.13s & 1.52s \\
-    Ours (1x CPU) & 1.3s & 6.62s & 0.09s & 1.85s \\
-    Ours (GPU) & 1.3s (CPU) & 0.104s & 0.0044s & 0.024s \\ \hline
-\end{tabular}
-\caption{Execution time of their Matlab implementation and our PyTorch implementation.}
-\end{center}
-\end{figure*}
-
-
 \section{Results}
-
-When evaluating the effectiveness of our netork, we elected to use both the structural similarity index measure (SSIM)
-and Peak signal-to-noise ratio (PSNR) to compare results to the ground truth capture. SSIM represents the similarity
-between a distorted and distortion free image, and is a value in the range 0 to 1, where 1 indicates perfect retention
-of perceptual quality compared to the ground truth data. PSNR is the ratio between the maximum intensity of the image
-and the noise introduced by reconstruction. Each result and ground truth image was additionally cropped so any
-non-captured pixels around the edges would not be included in our metrics.
-
-We computed the PSNR and SSIM scores for all views of 4 different light fields, giving us 256 views to compare.
-These scores were averaged to compute the average PSNR and SSIM of the two networks. 
-
-
-We created a series of animations to compare our results to Kalantari \etal's. These can be viewed 
-\href{https://drive.google.com/drive/folders/1DDbB1v1vbq7zsg3srJPDKFlI9H7mGEmC?usp=sharing}{here}.
-
 
 \begin{center}
 Flowers and Plants 25
@@ -332,7 +316,7 @@ Average
 \end{tabular}
 \end{center}
 
-\begin{figure*}[h]
+\begin{figure*}[p]
     \begin{multicols}{3}
         \includegraphics[width=\linewidth]{flowers_25/kalantari_05_05.png}
         \includegraphics[width=\linewidth]{flowers_25/ours_05_05.png}
@@ -361,7 +345,7 @@ Average
     }
 \end{figure*}
 
-\begin{figure*}[h]
+\begin{figure*}[p]
     \begin{multicols}{2}
         \includegraphics[width=\linewidth]{flowers_25/ours_05_05_disp.png}\par\caption*{Our Generated Disparity}
         \includegraphics[width=\linewidth]{flowers_25/stanford_depth.png}\par\caption*{Stanford Lytro Archive Depth}
@@ -375,6 +359,20 @@ Average
     }
 \end{figure*}
 
+When evaluating the effectiveness of our netork, we elected to use both the structural similarity index measure (SSIM)
+and Peak signal-to-noise ratio (PSNR) to compare results to the ground truth capture. SSIM represents the similarity
+between a distorted and distortion free image, and is a value in the range 0 to 1, where 1 indicates perfect retention
+of perceptual quality compared to the ground truth data. PSNR is the ratio between the maximum intensity of the image
+and the noise introduced by reconstruction. Each result and ground truth image was additionally cropped so any
+non-captured pixels around the edges would not be included in our metrics.
+
+We computed the PSNR and SSIM scores for all views of 4 different light fields, giving us 256 views to compare.
+These scores were averaged to compute the average PSNR and SSIM of the two networks. 
+
+
+We created a series of animations to compare our results to Kalantari \etal's. These can be viewed 
+\href{https://drive.google.com/drive/folders/1DDbB1v1vbq7zsg3srJPDKFlI9H7mGEmC?usp=sharing}{here}.
+
 \section{Conclusions and Future Work}
 
 In the future, there is potential to further improve this system with varied input views and synthesized
@@ -386,6 +384,7 @@ While we initially wanted to generate out of plane images with this technique, w
 of Lytro light fields has no ground truth information for out of plane images. This means that we can not directly
 train our network to produce out of plane images. However, this network could be used to densely sample a sparse light field,
 and a more traditional approach could be used to generate the out of plane images.
+
 
 {\small
 \bibliographystyle{ieee_fullname}
