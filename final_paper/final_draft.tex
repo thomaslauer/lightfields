@@ -89,12 +89,12 @@ UC San Diego\\
 \begin{abstract}
 Light field photography allows for the capture of images from multiple
 perspectives using a single camera array or array of microlenses. However
-these come at a tradeoff between spatial resolution and angular resolution.
-As the number of the microlens elements increases, the resulting lightfields
+this comes at a tradeoff between spatial resolution and angular resolution.
+As the number of microlens elements increases, the resulting light fields
 have higher angular resolution which is useful for depth estimation,
 but will have lower spatial resolution for novel view synthesis.
-We implement the a paper on learning based method to synthesize views from light
-field camera data \cite{LearningViewSynthesis} in PyTorch.
+We implement a learning based method to synthesize novel views from light
+field camera data based on the work of Kalanatri \etal~\cite{LearningViewSynthesis} in PyTorch.
 \end{abstract}
 
 % GUIDELINES for proposal:
@@ -119,11 +119,11 @@ limited resolution, and a tradeoff must be made between capturing more views of 
 (by densely sampling $x$, $y$, and $z$ in spatial resolution), or increasing the resolution of each view 
 (by densely sampling $\theta$ and $\phi$). 
 Lytro samples approximately $14 \times 14$ views of the scene, each with a resolution of 541 by 376 pixels.
-However, many of the edge outer views contain invalid data, so we focus on the center $8 \times 8$ section.
+However, many of the outer edge views contain invalid data, we therefore focus on the center $8 \times 8$ section.
 The resolution of each view is much lower than consumer cameras, 
 and contributed to the slow adoption of light field cameras in consumer products.
 
-If the camera could sample only the corner 4 views and reliably interpolate the ones in between, each individual view
+If the camera were to sample only the corner 4 views and reliably interpolate the ones in between, each individual view
 could be of a much higher resolution. This would also lower the cost of light field cameras by reducing the required
 sensor resolution. Alternatively, phones with multiple cameras could use each camera as a 
 view of the scene, and create light fields with no additional hardware. 
@@ -131,17 +131,17 @@ view of the scene, and create light fields with no additional hardware.
 \section{Current Work}
 
 % Insert summary of levoy 96 (this bit is related) (needs proper citation)
-Kalantari summarizes several existing methods for interpolating lightfields and their drawbacks.
+Kalantari \etal summarize several existing methods for interpolating light fields and their drawbacks.
 Many rely on high quality input images and well defined orientations between views,
 which are difficult to achieve with consumer light field cameras, and impossible with light fields
 captured by hand with cellphone cameras.
 
-Many geometric methods novel view synthesis 
+Many geometric methods for novel view synthesis 
 such as Levoy \etal~\cite{levoy1996light} require relatively high sample counts to ensure full
-coverage of the 4D lightfield, as the simple linear interpolation used by Levoy
+coverage of the 4D light field, as the simple linear interpolation used by Levoy
 do not work well if there are heavily occluded regions or missing data.
 
-Wanner \etal~\cite{Wanner} utilizes an optimization based approach, which calculates disparities
+Wanner \etal~\cite{Wanner} utilize an optimization based approach, which calculates disparities
 using traditional computer vision as a preprocessing step. However, because the disparity estimation
 is independent from the loss function, it can not be optimized as part of the training process. 
 
@@ -149,16 +149,9 @@ Kalantari \etal~\cite{LearningViewSynthesis} propose a method to interpolate bet
 sparsely sampled sub-apertures views. They use an $8 \times 8$ subset of the full $14 \times 14$ subaperture, since the
 edge pixels are often black. The four corner sub-aperture views are fed into a series of two 
 networks, the first is used to predict disparity which is then used to warp the sample images to the final perspective.
-The second network then takes these warped images, along with some additional metadata, and blends them together
-to produce the final RGB image of the novel view. Keeping this process differentiable allows both CNNs to 
-be trained at the same time, which lets the disparity estimator become tuned to work with the final CNN.
-
-\section{Technology}
-
-We implemented this using PyTorch, because it has high performance,
-automatically handles calculating derivatives, and we have previous experience with it.
-In addition, we used NumPy to compute the preprocessing and feature extraction of the input lightfields,
-and SciPy for the image quality metrics.
+The second network then takes these warped images, along with the disparity map and novel view location, and blends them together
+to produce the final RGB image at the novel view. Keeping this process differentiable allows both CNNs to 
+be trained at the same time, which lets the disparity estimator become tuned to work with the color CNN.
 
 \section{Dataset}
 
@@ -166,19 +159,21 @@ We train our model using using Lytro captures since they represent a regularized
 online datasets easily available. In this paper, we make use of the Standford Lytro dataset by Raj \etal~\cite{StanfordLytro}
 Further, Lytro captures are ideal for our purposes since it contains a large number of separate views between the
 four corner images we use. Our dataset is comprised of 68 images primarily from their flowers and plants dataset with
-other from occlusions and miscellaneous. Because Kalanatri \etal noted their implementation had issues with thin occlusions
+others from occlusions and miscellaneous. Because Kalanatri \etal noted their implementation had issues with thin occlusions
 we intentionally decided to do a large amount of our training on flowers and plants since those tended to have a large number
 of thin, complex occlusions for the network to learn to interpret. A full list of the images used for training and
 validation is included in our supplemental code.
 
 \section{Implementation Details}
 
-Our implementation closely follows that of Kalantari \etal~\cite{LearningViewSynthesis} with several modifications such
-as being based on PyTorch \cite{PyTorch}.
+We implemented a two stage network based on Kalantari \etal~\cite{LearningViewSynthesis} using PyTorch, because it has high performance,
+automatically handles calculating derivatives, and we have prior experience with it.
+In addition, we used NumPy to compute the preprocessing and feature extraction of the input light fields,
+and SciPy for the image quality metrics.
 
 \subsection{Preprocessing}
 
-Each lightfield is cropped to only use the inner $8 \times 8$ grid of images out of the total $14 \times 14$ available
+Each light field is cropped to only use the inner $8 \times 8$ grid of images out of the total $14 \times 14$ available
 since the microlens actually captures a circle of data. For training, we additionally ignore the outer 60 pixels where
 undesirable artifacts sometimes occur and train on $60\times60$ patches with a stride of 24 pixels to ensure overlap.
 Each patch has its depth data estimated for all 64 ground truths and is saved to disk. Across the 68 images from the
@@ -224,8 +219,7 @@ with autograd to allow backpropagating the weights through $L_{p_i}(s)$. $s$, $p
 constant precalculated inputs, and autograd is able to compute the derivative 
 $\frac{\partial \overline{L}_{p_i}}{\partial D_q}$ automatically. 
 
-These four RGB images, along with the $u$ and $v$ 
-locations of the desired novel view and the disparity estimate from the first network are concatenated
+These four RGB images, the $u$ and $v$ location of the desired novel view, and the disparity estimate from the first network are concatenated
 together into a single 15 channel image. Kalantari \etal name this image $H$. This is used as the input to the color estimation network, which
 has the following architecture:
 
@@ -244,7 +238,8 @@ has the following architecture:
 
 Because none of the convolutions have padding, the network loses 12 pixels on each edge, reducing
 the $60 \times 60$ patches during training to $36 \times 36$. Training without padding is ideal in this situation, 
-because it would make the training patches less representative of the entire image.
+because padding would make the training patches less representative of the entire image. On the full resolution image,
+this cropping is relatively small and acceptable.
 
 \subsection{Training}
 
@@ -257,7 +252,11 @@ because it would make the training patches less representative of the entire ima
     Ours (1x CPU) & 1.3s & 6.62s & 0.09s & 1.85s \\
     Ours (GPU) & 1.3s (CPU) & 0.104s & 0.0044s & 0.024s \\ \hline
 \end{tabular}
-\caption{Execution time of their Matlab implementation and our PyTorch implementation.}
+\caption{
+    Execution time of their Matlab implementation and our PyTorch implementation. When running on the CPU, our implementation
+    is limited to a single thread.
+    When running on the GPU, PyTorch is able to use highly optimized cuDNN kernels.
+}
 \end{center}
 \end{figure*}
 
@@ -273,9 +272,10 @@ We evaluate our training loop on batches of 64 $60 \times 60$ pixel patches.
 Our training loop runs on 8951 batches, which gives a total of 553,664 patches and over 700 million
 individual pixels to train on. 
 This is significantly more data than the roughly 100,000 patches Kalanatri \etal trained and their roughly 100 million samples.
-Our implementation is also significantly faster than theirs, it took their network 12.3 seconds to generate a novel viewpoint
-whereas ours takes 6.2 seconds. We believe this is mostly because of improvements in hardware from 2016, and has little to do with the
-actual algorithms. We trained the final version of our network for 69 epochs over the course of approximately 24 hours cumulatively.
+% Our implementation is also significantly faster than theirs, it took their network 12.3 seconds to generate a novel viewpoint
+% whereas ours takes 6.2 seconds.
+% We believe this is mostly because of improvements in hardware from 2016, and has little to do with the
+% actual algorithms. We trained the final version of our network for 69 epochs over the course of approximately 24 hours cumulatively.
 
 \section{Results}
 
@@ -384,7 +384,7 @@ We created a series of animations to compare our results to Kalantari \etal's. T
 In the future, there is potential to further improve this system with varied input views and synthesized
 view depth. Additionally, the depth estimation used at present is not entirely scale agnostic as it
 uses a pixel based window for disparity estimation. This can definitely be adjusted to be more resolution
-independent as is on of the reasons we were unable to test it on data from the Stanford lightfield array.
+independent as is on of the reasons we were unable to test it on data from the Stanford light field array.
 
 While we initially wanted to generate out of plane images with this technique, we realized that our training dataset
 of Lytro light fields has no ground truth information for out of plane images. This means that we can not directly
